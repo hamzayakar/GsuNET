@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Veritabanı Servisi (PostgreSQL)
+  db:
+    image: postgres:15-alpine
+    container_name: gsunet_db
+    restart: always
+    environment:
+      POSTGRES_USER: gsu_user
+      POSTGRES_PASSWORD: gsu_password
+      POSTGRES_DB: gsunet_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gsunet_network
+
+  # Veritabanı Yönetim Arayüzü (PgAdmin) - Opsiyonel ama Görsel Yönetim İçin Faydalı
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: gsunet_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gsunet.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - gsunet_network
+
+  # Ön Bellek ve Kuyruk Servisi (Redis)
+  redis:
+    image: redis:alpine
+    container_name: gsunet_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - gsunet_network
+
+volumes:
+  postgres_data:
+
+networks:
+  gsunet_network:
+    driver: bridge
