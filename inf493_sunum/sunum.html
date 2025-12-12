@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GsuNET Proje Sunumu</title>
+
+    <!-- Reveal.js CDN Bağlantıları -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/white.min.css" id="theme">
+
+    <!-- İkonlar için FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* ÖZEL CSS AYARLARI */
+        .reveal h1, .reveal h2, .reveal h3 { color: #a90432; text-transform: none; }
+        .reveal .slides section { text-align: left; }
+        .reveal ul { display: block; }
+        .reveal li { margin-bottom: 10px; font-size: 0.9em; }
+        .img-container { text-align: center; }
+        .img-container img { max-height: 450px; box-shadow: 0 0 20px rgba(0,0,0,0.15); border-radius: 10px; }
+        .team-box { display: flex; justify-content: space-around; font-size: 0.7em; text-align: center;}
+        .team-member { background: #f9f9f9; padding: 20px; border-radius: 10px; width: 45%; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .highlight { color: #fbc02d; font-weight: bold; }
+        .center-slide { text-align: center !important; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .box { background:#f0f4c3; padding:15px; border-radius:8px; font-size: 0.85em; }
+        .box-blue { background:#e1f5fe; padding:15px; border-radius:8px; font-size: 0.85em; }
+        .box-green { background:#e8f5e9; padding:15px; border-radius:8px; font-size: 0.85em; }
+        .box-orange { background:#fff3e0; padding:15px; border-radius:8px; font-size: 0.85em; }
+        .swot-table { font-size: 0.7em; width: 100%; }
+        .swot-table td { padding: 10px; vertical-align: top; }
+        .strength { background: #c8e6c9; }
+        .weakness { background: #ffcdd2; }
+        .opportunity { background: #fff9c4; }
+        .threat { background: #d1c4e9; }
+        .phase-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<div class="reveal">
+    <div class="slides">
+
+        <!-- SLAYT 1: KAPAK -->
+        <section class="center-slide">
+            <h1 style="font-size: 3.5em; margin-bottom: 20px;">GsuNET</h1>
+            <h3 style="color: #333;">Galatasaray University Networking and Event Tracking System</h3>
+            <p style="font-size: 1.1em; margin-top: 30px; color: #666;">
+                Kulüp ve Etkinlik Yönetim Platformu
+            </p>
+            <hr style="width: 60%; margin: 40px auto;">
+            <div style="font-size: 0.75em; margin-top: 30px;">
+                <p><strong>Proje Ekibi</strong></p>
+                <p style="color: #01579b;"><strong>Endüstri Mühendisliği:</strong> Başar Saraç, Berkay Çadırcı</p>
+                <p style="color: #e65100;"><strong>Bilgisayar Mühendisliği:</strong> Hamza Yakar, Mert Samet Kayacıoğlu, Edipcan Erol</p>
+            </div>
+            <p style="font-size: 0.6em; color: #666; margin-top: 50px;">Galatasaray Üniversitesi - 2025</p>
+        </section>
+
+        <!-- SLAYT 2: İÇİNDEKİLER -->
+        <section>
+            <h2><i class="fas fa-list"></i> Sunum İçeriği</h2>
+            <div class="two-col" style="font-size: 0.85em;">
+                <div>
+                    <ol>
+                        <li>Problem Tanımı ve Motivasyon</li>
+                        <li>Proje Amacı ve Çözüm</li>
+                        <li>Hedef Kullanıcı Grupları</li>
+                        <li>SWOT Analizi</li>
+                        <li>Kalite Evi (QFD)</li>
+                        <li>Temel Fonksiyonlar</li>
+                        <li>Sistem Mimarisi</li>
+                    </ol>
+                </div>
+                <div>
+                    <ol start="8">
+                        <li>Proje Organizasyonu</li>
+                        <li>Proje Fazları ve Metodoloji</li>
+                        <li>Zaman Planı (Gantt)</li>
+                        <li>Teknoloji Yığını</li>
+                        <li>Risk Yönetimi</li>
+                        <li>Sonuç ve Beklentiler</li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 3: PROBLEM -->
+        <section>
+            <h2><i class="fas fa-exclamation-triangle"></i> Mevcut Durum ve Sorunlar</h2>
+            <div style="font-size: 0.85em;">
+                <ul>
+                    <li><strong>Dağınık İletişim:</strong> Etkinlikler WhatsApp, Instagram ve e-posta arasında kayboluyor. Her kulüp farklı kanallar kullanıyor.</li>
+                    <li><strong>Veri Kirliliği:</strong> Merkezi bir takvim yok, çakışmalar yaşanıyor. Öğrenciler etkinliklerden haberdar olamıyor.</li>
+                    <li><strong>Kurumsal Hafıza Eksikliği:</strong> Geçmiş etkinlik verilerine ve sponsorluk geçmişine ulaşılamıyor.</li>
+                    <li><strong>Erişim Zorluğu:</strong> Yeni öğrenciler ilgilendikleri kulüplere ulaşmakta güçlük çekiyor.</li>
+                    <li><strong>Manuel Süreçler:</strong> Derslik rezervasyonu, danışman onayları ve sponsorluk görüşmeleri manuel yürütülüyor.</li>
+                    <li><strong>Performans Ölçüm Eksikliği:</strong> Kulüpler, etkinliklerinin etkisini ve katılım oranlarını sistematik olarak ölçemiyor.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SLAYT 4: ÇÖZÜM -->
+        <section>
+            <h2><i class="fas fa-lightbulb"></i> Çözüm: GsuNET</h2>
+            <p>Üniversite genelindeki tüm paydaşları tek bir dijital çatıda toplayan, <strong>bütünleşik kampüs yönetim ekosistemi</strong>.</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px; font-size: 0.8em;">
+                <div class="box">
+                    <h4><i class="fas fa-users"></i> Öğrenciler İçin</h4>
+                    <ul style="font-size: 0.95em;">
+                        <li>Tek tıkla etkinlik kaydı</li>
+                        <li>Kişiselleştirilmiş kulüp önerileri</li>
+                        <li>Akıllı bildirimler ve hatırlatmalar</li>
+                        <li>Etkinlik geçmişi takibi</li>
+                    </ul>
+                </div>
+                <div class="box-blue">
+                    <h4><i class="fas fa-cogs"></i> Kulüp Yönetimi İçin</h4>
+                    <ul style="font-size: 0.95em;">
+                        <li>Hızlı etkinlik oluşturma ve duyuru</li>
+                        <li>Üye ve katılımcı takibi</li>
+                        <li>Sponsorluk yönetimi</li>
+                        <li>Performans raporları ve analitiği</li>
+                    </ul>
+                </div>
+                <div class="box-green">
+                    <h4><i class="fas fa-user-tie"></i> Danışmanlar İçin</h4>
+                    <ul style="font-size: 0.95em;">
+                        <li>Hızlı onay mekanizması</li>
+                        <li>Kulüp faaliyetlerini izleme</li>
+                        <li>Geçmiş kayıtlara erişim</li>
+                    </ul>
+                </div>
+                <div class="box-orange">
+                    <h4><i class="fas fa-building"></i> Yönetim İçin</h4>
+                    <ul style="font-size: 0.95em;">
+                        <li>Derslik ve salon rezervasyonu</li>
+                        <li>Merkezi veri ve raporlama</li>
+                        <li>Kapasite optimizasyonu</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 5: HEDEF KİTLE -->
+        <section>
+            <h2><i class="fas fa-users-cog"></i> Hedef Kullanıcı Grupları</h2>
+            <div style="font-size: 0.75em;">
+                <div class="two-col">
+                    <div>
+                        <h4 style="color: #01579b;"><i class="fas fa-user-graduate"></i> Kulüp Yöneticileri</h4>
+                        <p><strong>İhtiyaçlar:</strong> Tek panelden yönetim, şablonlar, performans raporları, kolay iletişim</p>
+
+                        <h4 style="color: #2e7d32; margin-top: 20px;"><i class="fas fa-user"></i> Pasif Öğrenciler</h4>
+                        <p><strong>İhtiyaçlar:</strong> Sade arayüz, kişiselleştirilmiş öneriler, hızlı kayıt, minimum bürokrasi</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #d84315;"><i class="fas fa-chalkboard-teacher"></i> Akademik Danışmanlar</h4>
+                        <p><strong>İhtiyaçlar:</strong> Hızlı onay ekranı, geçmiş faaliyetleri görme, geri bildirim bırakma</p>
+
+                        <h4 style="color: #6a1b9a; margin-top: 20px;"><i class="fas fa-chart-line"></i> Üniversite Yönetimi</h4>
+                        <p><strong>İhtiyaçlar:</strong> Dashboard'lar, özet raporlar, etkinlik istatistikleri, sponsorluk hacmi</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 6: SWOT ANALİZİ -->
+        <section>
+            <h2><i class="fas fa-chart-bar"></i> SWOT Analizi</h2>
+            <table class="swot-table">
+                <tr>
+                    <td class="strength">
+                        <h4 style="margin-top: 0;">💪 Güçlü Yönler</h4>
+                        <ul style="margin: 0;">
+                            <li>Aktif kulüp ekosistemi</li>
+                            <li>Yüksek öğrenci katılım isteği</li>
+                            <li>Sosyal medya deneyimi</li>
+                        </ul>
+                    </td>
+                    <td class="weakness">
+                        <h4 style="margin-top: 0;">⚠️ Zayıf Yönler</h4>
+                        <ul style="margin: 0;">
+                            <li>Merkezi platform eksikliği</li>
+                            <li>Dağınık bilgi paylaşımı</li>
+                            <li>Performans ölçüm zorluğu</li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="opportunity">
+                        <h4 style="margin-top: 0;">🚀 Fırsatlar</h4>
+                        <ul style="margin: 0;">
+                            <li>Dijital dönüşüm vizyonu</li>
+                            <li>Sponsorluk süreçlerini güçlendirme</li>
+                            <li>Ölçeklenebilir model oluşturma</li>
+                        </ul>
+                    </td>
+                    <td class="threat">
+                        <h4 style="margin-top: 0;">⚡ Tehditler</h4>
+                        <ul style="margin: 0;">
+                            <li>Alışkanlıkları değiştirme direnci</li>
+                            <li>Uzun vadeli sahiplik belirsizliği</li>
+                            <li>Veri güvenliği riskleri</li>
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- SLAYT 6.5: KALITE EVI (QFD) -->
+        <section class="center-slide">
+            <h2><i class="fas fa-home"></i> Kalite Evi (QFD - House of Quality)</h2>
+            <p style="font-size: 0.7em;">Kullanıcı İhtiyaçlarından Teknik Gereksinimlere</p>
+
+            <div class="img-container">
+                <img src="qfd.png" alt="QFD Matrisi" style="max-height: 420px;" onerror="this.src='https://via.placeholder.com/900x450?text=QFD+Matrisi'">
+            </div>
+
+            <div style="font-size: 0.65em; margin-top: 15px; text-align: left;">
+                <p><strong>QFD Önceliklendirme (9-3-1 Sistemi):</strong></p>
+                <div class="two-col" style="font-size: 0.95em;">
+                    <div class="box-green">
+                        <strong>Faz 1 Öncelikler:</strong>
+                        <ul style="margin: 5px 0;">
+                            <li>Veritabanı yapısı (T3)</li>
+                            <li>Mobil uyumluluk (T9)</li>
+                            <li>UI/UX (T1)</li>
+                            <li>Etkinlik modülü (T4)</li>
+                            <li>Bildirim altyapısı (T2)</li>
+                        </ul>
+                    </div>
+                    <div class="box-blue">
+                        <strong>Faz 2 ve 3:</strong>
+                        <ul style="margin: 5px 0;">
+                            <li>Sponsorluk modülü (T6)</li>
+                            <li>Raporlama (T10)</li>
+                            <li>Kulüp Paneli (T7)</li>
+                            <li>Salon modülü (T5)</li>
+                            <li>Güvenlik (T8)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 7: TEMEL ÖZELLİKLER -->
+        <section>
+            <h2>🚀 Temel Fonksiyonlar ve Modüller</h2>
+            <div style="font-size: 0.75em;">
+                <div class="two-col">
+                    <div>
+                        <h4><i class="fas fa-calendar-alt"></i> Etkinlik Yönetimi</h4>
+                        <ul>
+                            <li>Hızlı etkinlik oluşturma ve paylaşma</li>
+                            <li>QR kod ile yoklama sistemi</li>
+                            <li>Kontenjan takibi ve kayıt yönetimi</li>
+                            <li>Etkinlik kategorileri ve filtreleme</li>
+                        </ul>
+
+                        <h4 style="margin-top: 15px;"><i class="fas fa-bell"></i> Bildirim Sistemi</h4>
+                        <ul>
+                            <li>Kişiselleştirilmiş e-posta bildirimleri</li>
+                            <li>Push bildirimleri (PWA)</li>
+                            <li>Takvim entegrasyonu (iCal, Google)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4><i class="fas fa-handshake"></i> Sponsorluk Modülü</h4>
+                        <ul>
+                            <li>Dijital sponsorluk talepleri</li>
+                            <li>Şablon bazlı teklif yönetimi</li>
+                            <li>Sponsorluk geçmişi ve raporlama</li>
+                        </ul>
+
+                        <h4 style="margin-top: 15px;"><i class="fas fa-door-open"></i> Alan Yönetimi</h4>
+                        <ul>
+                            <li>Derslik ve amfi rezervasyonu</li>
+                            <li>Kapasite bazlı otomatik öneri</li>
+                            <li>Çakışma kontrolü</li>
+                        </ul>
+
+                        <h4 style="margin-top: 15px;"><i class="fas fa-chart-pie"></i> Raporlama</h4>
+                        <ul>
+                            <li>Katılım istatistikleri</li>
+                            <li>Kulüp performans metrikleri</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 8: SİSTEM MİMARİSİ -->
+        <section>
+            <h2><i class="fas fa-network-wired"></i> Sistem Mimarisi</h2>
+            <div style="font-size: 0.8em;">
+                <p><strong>Modern 3-Tier Architecture</strong></p>
+                <div style="display: flex; justify-content: space-between; margin-top: 30px;">
+                    <div style="flex: 1; text-align: center; margin: 0 10px;">
+                        <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; height: 150px;">
+                            <i class="fab fa-react fa-3x" style="color: #61dafb;"></i>
+                            <h4 style="margin-top: 10px;">Frontend</h4>
+                            <p style="font-size: 0.85em;">React.js<br>Responsive Design<br>PWA Support</p>
+                        </div>
+                    </div>
+                    <div style="flex: 1; text-align: center; margin: 0 10px;">
+                        <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; height: 150px;">
+                            <i class="fab fa-node fa-3x" style="color: #68a063;"></i>
+                            <h4 style="margin-top: 10px;">Backend</h4>
+                            <p style="font-size: 0.85em;">Node.js / Django<br>RESTful API<br>JWT Auth</p>
+                        </div>
+                    </div>
+                    <div style="flex: 1; text-align: center; margin: 0 10px;">
+                        <div style="background: #fff3e0; padding: 20px; border-radius: 10px; height: 150px;">
+                            <i class="fas fa-database fa-3x" style="color: #336791;"></i>
+                            <h4 style="margin-top: 10px;">Database</h4>
+                            <p style="font-size: 0.85em;">PostgreSQL<br>JSON Support<br>ACID Compliant</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 30px;">
+                    <h4>Temel Bileşenler:</h4>
+                    <ul style="font-size: 0.85em;">
+                        <li><strong>API Gateway:</strong> Merkezi erişim noktası ve yük dengeleme</li>
+                        <li><strong>Authentication Service:</strong> Rol bazlı yetkilendirme (RBAC)</li>
+                        <li><strong>Notification Service:</strong> E-posta ve push bildirim yönetimi</li>
+                        <li><strong>File Storage:</strong> Etkinlik görselleri ve belgeler için bulut depolama</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 9: VERİ MODELİ -->
+        <section>
+            <h2><i class="fas fa-database"></i> Veri Modeli ve Ana Varlıklar</h2>
+            <div style="font-size: 0.75em;">
+                <div class="two-col">
+                    <div>
+                        <h4>📊 Kullanıcı (User)</h4>
+                        <ul>
+                            <li>Kimlik bilgileri, roller</li>
+                            <li>Takip edilen kulüpler</li>
+                            <li>Etkinlik geçmişi</li>
+                        </ul>
+
+                        <h4>🏢 Kulüp (Club)</h4>
+                        <ul>
+                            <li>Kulüp profili ve açıklama</li>
+                            <li>Yönetim kurulu</li>
+                            <li>Üye listesi</li>
+                        </ul>
+
+                        <h4>📅 Etkinlik (Event)</h4>
+                        <ul>
+                            <li>Başlık, açıklama, tarih/saat</li>
+                            <li>Konum ve kapasite</li>
+                            <li>Kayıt listesi</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>🏫 Alan (Venue)</h4>
+                        <ul>
+                            <li>Derslik/amfi bilgileri</li>
+                            <li>Kapasite ve özellikler</li>
+                            <li>Rezervasyon takvimi</li>
+                        </ul>
+
+                        <h4>🤝 Sponsorluk (Sponsorship)</h4>
+                        <ul>
+                            <li>Sponsor firma bilgileri</li>
+                            <li>Teklif ve anlaşmalar</li>
+                            <li>Sponsorluk geçmişi</li>
+                        </ul>
+
+                        <h4>🔔 Bildirim (Notification)</h4>
+                        <ul>
+                            <li>Bildirim tipi ve içerik</li>
+                            <li>Alıcı ve öncelik</li>
+                            <li>Durum (okundu/okunmadı)</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="margin-top: 20px; font-style: italic; color: #666;">
+                    <strong>İlişkiler:</strong> Kullanıcı ↔ Kulüp (Many-to-Many), Kulüp ↔ Etkinlik (One-to-Many), Etkinlik ↔ Alan (Many-to-One), Kulüp ↔ Sponsorluk (One-to-Many)
+                </p>
+            </div>
+        </section>
+
+        <!-- SLAYT 10: ORGANİZASYON -->
+        <section class="center-slide">
+            <h2>👥 Proje Organizasyonu</h2>
+            <p style="font-size: 0.75em;">Disiplinler Arası Çalışma Modeli</p>
+
+            <div class="img-container">
+                <img src="org-chart.png" alt="Organizasyon Şeması" onerror="this.src='https://via.placeholder.com/800x400?text=Organizasyon+Semasi'">
+            </div>
+
+            <p style="font-size: 0.7em; margin-top: 20px;">
+                Proje ekibi, proje yöneticisi liderliğinde <strong>teknik geliştirme</strong> ve <strong>süreç analizi</strong> olmak üzere iki ana kola ayrılmıştır.
+            </p>
+        </section>
+
+        <!-- SLAYT 11: İŞ BÖLÜMÜ -->
+        <section>
+            <h2>🤝 Disiplinler Arası Görev Dağılımı</h2>
+            <div class="team-box">
+                <div class="team-member" style="border-left: 5px solid #01579b;">
+                    <h4 style="color:#01579b;"><i class="fas fa-chart-line"></i> Endüstri Mühendisliği</h4>
+                    <ul style="list-style: none; padding:0; font-size: 0.9em;">
+                        <li><strong>Başar Saraç & Berkay Çadırcı</strong></li>
+                        <hr>
+                        <li>✓ Proje Yönetimi ve Koordinasyon</li>
+                        <li>✓ Gantt Diyagramı ve Zaman Planı</li>
+                        <li>✓ Süreç ve Risk Analizi</li>
+                        <li>✓ Fizibilite Çalışmaları</li>
+                        <li>✓ SWOT ve Pazar Araştırması</li>
+                        <li>✓ Kalite Evi (QFD) Çalışması</li>
+                        <li>✓ Müşteri Analizi</li>
+                    </ul>
+                </div>
+                <div class="team-member" style="border-left: 5px solid #e65100;">
+                    <h4 style="color:#e65100;"><i class="fas fa-laptop-code"></i> Bilgisayar Mühendisliği</h4>
+                    <ul style="list-style: none; padding:0; font-size: 0.9em;">
+                        <li><strong>Hamza Yakar, Mert Samet, Edipcan Erol</strong></li>
+                        <hr>
+                        <li>✓ Backend Geliştirme & API Tasarımı</li>
+                        <li>✓ Veritabanı Tasarımı ve Modelleme</li>
+                        <li>✓ Frontend Geliştirme & UI/UX</li>
+                        <li>✓ Sistem Mimarisi Tasarımı</li>
+                        <li>✓ Güvenlik ve Entegrasyon</li>
+                        <li>✓ Test Süreçleri ve Kalite Kontrolü</li>
+                        <li>✓ Deployment ve DevOps</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 12: PROJE FAZLARI -->
+        <section>
+            <h2><i class="fas fa-project-diagram"></i> Proje Fazları ve Metodoloji</h2>
+            <p style="font-size: 0.8em;">GsuNET, <strong>Çevik (Agile)</strong> yöntemle geliştirilmektedir.</p>
+
+            <div style="font-size: 0.75em;">
+                <div class="phase-box">
+                    <strong>Faz I: Keşif ve İhtiyaç Analizi</strong>
+                    <p style="margin: 5px 0 0 0;">Kapsam netleştirme, paydaş tanımlama, literatür taraması</p>
+                </div>
+
+                <div class="phase-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <strong>Faz II: Sistem Analizi ve Gereksinim Tanımlama</strong>
+                    <p style="margin: 5px 0 0 0;">SWOT, pazar analizi, QFD, fizibilite ve risk analizi</p>
+                </div>
+
+                <div class="phase-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <strong>Faz III: Sistem Tasarımı ve Demo Geliştirme</strong>
+                    <p style="margin: 5px 0 0 0;">Mimari tasarım, veri modeli, wireframe, çalışır prototip</p>
+                </div>
+
+                <div class="phase-box" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <strong>Faz IV: Test, Revizyon ve Raporlama</strong>
+                    <p style="margin: 5px 0 0 0;">Pilot testler, iyileştirmeler, final raporu</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 13: AKIŞ ŞEMASI -->
+        <section class="center-slide">
+            <h2>🔄 Proje Akışı ve Geliştirme Döngüsü</h2>
+            <p style="font-size: 0.75em;">İteratif Geliştirme ve Sürekli Geri Bildirim</p>
+
+            <div class="img-container">
+                <img src="proje-akis-diyagrami.png" alt="Akış Şeması" onerror="this.src='https://via.placeholder.com/800x450?text=Proje+Akis+Semasi'">
+            </div>
+
+            <p style="font-size: 0.7em; margin-top: 15px; color: #666;">
+                Her iterasyonda MVP (Minimum Viable Product) test edilerek nihai ürüne evrilmektedir.
+            </p>
+        </section>
+
+        <!-- SLAYT 14: GANTT -->
+        <section class="center-slide">
+            <h2>📅 Zaman Planı (Gantt Şeması)</h2>
+            <p style="font-size: 0.7em;">21 Ana Görev - 12 Haftalık Süreç</p>
+
+            <div class="img-container">
+                <img src="gantt.png" alt="Gantt Şeması" onerror="this.src='https://via.placeholder.com/900x450?text=Gantt+Semasi'">
+            </div>
+
+            <div style="font-size: 0.65em; margin-top: 15px; text-align: left;">
+                <p><strong>Önemli Kilometre Taşları:</strong></p>
+                <ul style="margin: 5px 0;">
+                    <li>Ara Rapor: 22 Kasım</li>
+                    <li>Demo Prototip: Hafta 10</li>
+                    <li>Final Rapor: 19 Aralık</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SLAYT 15: TEKNOLOJİLER -->
+        <section>
+            <h2>🛠️ Teknoloji Yığını</h2>
+            <div style="display: flex; justify-content: space-around; text-align: center; margin-top: 40px; flex-wrap: wrap;">
+                <div style="margin: 10px;">
+                    <i class="fab fa-react fa-4x" style="color: #61dafb;"></i>
+                    <p style="margin-top: 10px;"><strong>Frontend</strong><br><small>React.js + Tailwind CSS</small></p>
+                </div>
+                <div style="margin: 10px;">
+                    <i class="fab fa-node fa-4x" style="color: #68a063;"></i>
+                    <p style="margin-top: 10px;"><strong>Backend</strong><br><small>Node.js / Express</small></p>
+                </div>
+                <div style="margin: 10px;">
+                    <i class="fas fa-database fa-4x" style="color: #336791;"></i>
+                    <p style="margin-top: 10px;"><strong>Database</strong><br><small>PostgreSQL</small></p>
+                </div>
+                <div style="margin: 10px;">
+                    <i class="fab fa-figma fa-4x" style="color: #f24e1e;"></i>
+                    <p style="margin-top: 10px;"><strong>Design</strong><br><small>Figma</small></p>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; font-size: 0.75em;">
+                <div class="two-col">
+                    <div>
+                        <h4>Geliştirme Araçları</h4>
+                        <ul style="font-size: 0.9em;">
+                            <li>Git & GitHub (Versiyon Kontrol)</li>
+                            <li>VS Code (IDE)</li>
+                            <li>Postman (API Test)</li>
+                            <li>Jest & React Testing Library</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Tasarım ve Dokümantasyon</h4>
+                        <ul style="font-size: 0.9em;">
+                            <li>Lucidchart (UML, ER Diyagramları)</li>
+                            <li>draw.io (Akış Şemaları)</li>
+                            <li>LaTeX (Raporlama)</li>
+                            <li>Swagger/OpenAPI (API Dok.)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 16: GÜVENLİK -->
+        <section>
+            <h2><i class="fas fa-shield-alt"></i> Güvenlik ve Veri Koruma</h2>
+            <div style="font-size: 0.8em;">
+                <div class="two-col">
+                    <div class="box">
+                        <h4>🔐 Kimlik Doğrulama</h4>
+                        <ul>
+                            <li>JWT tabanlı oturum yönetimi</li>
+                            <li>Rol bazlı erişim kontrolü (RBAC)</li>
+                            <li>Güvenli şifre saklama (bcrypt)</li>
+                            <li>Oturum zaman aşımı</li>
+                        </ul>
+                    </div>
+                    <div class="box-blue">
+                        <h4>🛡️ Veri Güvenliği</h4>
+                        <ul>
+                            <li>HTTPS şifreleme (TLS/SSL)</li>
+                            <li>SQL Injection koruması (ORM)</li>
+                            <li>XSS ve CSRF korumaları</li>
+                            <li>Veritabanı şifreleme</li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <h4>📋 Gizlilik ve Uyumluluk</h4>
+                    <ul style="font-size: 0.9em;">
+                        <li><strong>KVKK Uyumluluğu:</strong> Kişisel verilerin korunması ve anonimleştirme</li>
+                        <li><strong>Veri Minimizasyonu:</strong> Yalnızca gerekli verilerin toplanması</li>
+                        <li><strong>Kullanıcı Hakları:</strong> Veri görüntüleme, düzenleme ve silme yetkileri</li>
+                        <li><strong>Düzenli Güvenlik Testleri:</strong> Periyodik penetrasyon testleri</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 17: RİSK YÖNETİMİ -->
+        <section>
+            <h2><i class="fas fa-exclamation-circle"></i> Risk Yönetimi</h2>
+            <div style="font-size: 0.7em;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #a90432; color: white;">
+                            <th style="padding: 10px; border: 1px solid #ddd;">Risk</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Olasılık</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Etki</th>
+                            <th style="padding: 10px; border: 1px solid #ddd;">Azaltma Stratejisi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Düşük kullanım oranı</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Orta</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Yüksek</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Kullanıcı eğitimleri, tanıtım kampanyaları, bazı süreçleri zorunlu kılma</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Teknik bakım eksikliği</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Düşük</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Orta</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Dokümantasyon, kod standartları, yıllık proje ekipleri görevlendirmesi</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Veri güvenliği ihlali</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Düşük</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Yüksek</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">RBAC, şifreleme, güvenlik testleri, incident response planı</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>Takvim gecikmesi</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Orta</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Orta</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">Kritik yol takibi, tampon süreler, düzenli ekip toplantıları</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SLAYT 18: BEKLENEN FAYDALAR -->
+        <section>
+            <h2><i class="fas fa-star"></i> Beklenen Faydalar ve Çıktılar</h2>
+            <div style="font-size: 0.8em;">
+                <div class="two-col">
+                    <div>
+                        <h4 style="color: #01579b;">📈 Öğrenciler İçin</h4>
+                        <ul>
+                            <li>%40 daha fazla etkinlik farkındalığı</li>
+                            <li>%30 artış beklenen katılım oranları</li>
+                            <li>Kişiselleştirilmiş kampüs deneyimi</li>
+                        </ul>
+
+                        <h4 style="color: #2e7d32; margin-top: 20px;">🎯 Kulüpler İçin</h4>
+                        <ul>
+                            <li>%50 zaman tasarrufu (manuel süreçler)</li>
+                            <li>Veri odaklı karar alma</li>
+                            <li>Daha fazla sponsorluk fırsatı</li>
+                            <li>Dijital kurumsal hafıza</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: #d84315;">🏫 Üniversite İçin</h4>
+                        <ul>
+                            <li>Merkezi veri ve raporlama</li>
+                            <li>Kaynak optimizasyonu</li>
+                            <li>Dijital dönüşüm örnek projesi</li>
+                            <li>Diğer üniversitelere model</li>
+                        </ul>
+
+                        <h4 style="color: #6a1b9a; margin-top: 20px;">💼 Sponsorlar İçin</h4>
+                        <ul>
+                            <li>Hedef kitle analitiği</li>
+                            <li>Şeffaf görünürlük metrikleri</li>
+                            <li>Dijital iletişim kanalı</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 19: GELECEK VİZYON -->
+        <section>
+            <h2><i class="fas fa-rocket"></i> Gelecek Vizyonu ve Ölçeklenebilirlik</h2>
+            <div style="font-size: 0.8em;">
+                <h3 style="font-size: 1.1em; color: #01579b;">Faz 1: MVP (İlk 3 Ay)</h3>
+                <ul>
+                    <li>Temel etkinlik yönetimi ve kayıt sistemi</li>
+                    <li>5-10 pilot kulüp ile test</li>
+                    <li>Feedback toplama ve iyileştirme</li>
+                </ul>
+
+                <h3 style="font-size: 1.1em; color: #2e7d32; margin-top: 20px;">Faz 2: Tam Entegrasyon (3-6 Ay)</h3>
+                <ul>
+                    <li>Tüm kulüplerin sisteme dahil edilmesi</li>
+                    <li>Sponsorluk modülü aktifleşmesi</li>
+                    <li>Mobil uygulama (PWA) lansmanı</li>
+                    <li>Üniversite bilgi sistemi entegrasyonu</li>
+                </ul>
+
+                <h3 style="font-size: 1.1em; color: #d84315; margin-top: 20px;">Faz 3: Gelişmiş Özellikler (6-12 Ay)</h3>
+                <ul>
+                    <li>AI destekli etkinlik önerileri</li>
+                    <li>Gelişmiş analitiği ve predictive insights</li>
+                    <li>Sosyal medya entegrasyonu</li>
+                    <li>Diğer üniversitelere ölçeklendirme</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SLAYT 20: SONUÇ -->
+        <section>
+            <h2><i class="fas fa-check-circle"></i> Sonuç ve Özet</h2>
+            <div style="font-size: 0.85em;">
+                <div class="box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; margin: 20px 0;">
+                    <h3 style="color: white; margin-top: 0;">GsuNET Nedir?</h3>
+                    <p style="margin: 10px 0;">
+                        Galatasaray Üniversitesi'nin <strong>kampüs yaşamını dijitalleştiren</strong>,
+                        öğrenciler, kulüpler, danışmanlar ve yönetimi <strong>tek bir ekosistemde buluşturan</strong>
+                        yenilikçi bir platformdur.
+                    </p>
+                </div>
+
+                <h4>🎯 Temel Değer Önerileri:</h4>
+                <ul>
+                    <li><strong>Merkezi Erişim:</strong> Tüm etkinlikler tek platformda</li>
+                    <li><strong>Otomasyon:</strong> Manuel süreçlerin dijitalleştirilmesi</li>
+                    <li><strong>Veri Odaklılık:</strong> Karar almayı destekleyen analitiği</li>
+                    <li><strong>Sürdürülebilirlik:</strong> Dijital kurumsal hafıza</li>
+                    <li><strong>Ölçeklenebilirlik:</strong> Diğer üniversiteler için model</li>
+                </ul>
+
+                <div style="margin-top: 25px; padding: 15px; background: #e8f5e9; border-left: 4px solid #2e7d32; border-radius: 5px;">
+                    <p style="margin: 0; font-style: italic;">
+                        <strong>GsuNET ile hedefimiz,</strong> sadece bir yazılım geliştirmek değil,
+                        Galatasaray Üniversitesi'nin sosyal ve kültürel ekosistemini güçlendirmek ve
+                        kampüs yaşamını herkes için daha erişilebilir, verimli ve etkileşimli hale getirmektir.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLAYT 21: TEŞEKKÜR -->
+        <section class="center-slide">
+            <h1 style="font-size: 3em; margin-bottom: 30px;">Teşekkürler! 🙏</h1>
+            <h3 style="color: #333; margin-bottom: 50px;">Sorularınız için hazırız</h3>
+
+            <div style="margin-top: 60px; font-size: 0.7em; color: #666;">
+                <p><i class="fas fa-envelope"></i> <strong>İletişim:</strong> gsunet@galatasaray.edu.tr</p>
+                <p><i class="fab fa-github"></i> <strong>GitHub:</strong> github.com/gsunet-project</p>
+                <p><i class="fas fa-globe"></i> <strong>Website:</strong> gsunet.galatasaray.edu.tr</p>
+            </div>
+
+            <div style="margin-top: 60px; font-size: 0.65em; color: #999;">
+                <p>Galatasaray Üniversitesi | Mühendislik ve Teknoloji Fakültesi</p>
+                <p>INF493 Bitirme Projesi - 2025</p>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<!-- Reveal.js Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+<script>
+    Reveal.initialize({
+        controls: true,
+        progress: true,
+        center: false,
+        hash: true,
+        transition: 'slide',
+        slideNumber: 'c/t',
+        showSlideNumber: 'all',
+        width: 1280,
+        height: 720,
+        margin: 0.04,
+    });
+</script>
+
+</body>
+</html>
