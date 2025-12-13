@@ -13,6 +13,7 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPasswordHints, setShowPasswordHints] = useState(false);
 
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -25,18 +26,73 @@ const Register = () => {
     });
   };
 
+  const validatePassword = (password) => {
+    const errors = [];
+
+    if (password.length < 8) {
+      errors.push('at least 8 characters');
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      errors.push('one uppercase letter');
+    }
+
+    if (!/[a-z]/.test(password)) {
+      errors.push('one lowercase letter');
+    }
+
+    if (!/\d/.test(password)) {
+      errors.push('one number');
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push('one special character (!@#$%^&*(),.?":{}|<>)');
+    }
+
+    return errors;
+  };
+
+  const sanitizeInput = (input) => {
+    // Check for SQL injection patterns
+    const sqlPatterns = [
+      /\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|EXECUTE|UNION)\b/i,
+      /(--|;|\/\*|\*\/)/,
+    ];
+
+    for (const pattern of sqlPatterns) {
+      if (pattern.test(input)) {
+        return false;
+      }
+    }
+
+    // Check for script tags
+    if (/<script|javascript:|onerror=|onload=/i.test(input)) {
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Validation
+    // Sanitize inputs
+    if (!sanitizeInput(formData.full_name) ||
+        !sanitizeInput(formData.student_number)) {
+      setError('Input contains invalid characters or patterns');
+      return;
+    }
+
+    // Password validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    const passwordErrors = validatePassword(formData.password);
+    if (passwordErrors.length > 0) {
+      setError(`Password must contain ${passwordErrors.join(', ')}`);
       return;
     }
 
@@ -126,11 +182,34 @@ const Register = () => {
                 type="password"
                 autoComplete="new-password"
                 required
+                onFocus={() => setShowPasswordHints(true)}
                 className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500 focus:z-10 sm:text-sm"
                 placeholder={t('password')}
                 value={formData.password}
                 onChange={handleChange}
               />
+              {showPasswordHints && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
+                  <p className="font-semibold text-blue-900 mb-1">Password must contain:</p>
+                  <ul className="space-y-1 text-blue-800">
+                    <li className={formData.password.length >= 8 ? 'text-green-600' : ''}>
+                      ✓ At least 8 characters
+                    </li>
+                    <li className={/[A-Z]/.test(formData.password) ? 'text-green-600' : ''}>
+                      ✓ One uppercase letter
+                    </li>
+                    <li className={/[a-z]/.test(formData.password) ? 'text-green-600' : ''}>
+                      ✓ One lowercase letter
+                    </li>
+                    <li className={/\d/.test(formData.password) ? 'text-green-600' : ''}>
+                      ✓ One number
+                    </li>
+                    <li className={/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-green-600' : ''}>
+                      ✓ One special character (!@#$%^&*(),.?":{}|&lt;&gt;)
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
             <div>
               <label htmlFor="confirmPassword" className="sr-only">

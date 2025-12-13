@@ -129,7 +129,7 @@ async def update_event(
         Updated event object
 
     Raises:
-        HTTPException: If event not found
+        HTTPException: If event not found or unauthorized
     """
     event = db.query(Event).filter(Event.id == event_id).first()
 
@@ -138,6 +138,16 @@ async def update_event(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found"
         )
+
+    # Authorization check: only the club manager who manages this event's club or admin can update
+    if current_user.role != UserRole.ADMIN:
+        # Check if the user manages the club that owns this event
+        user_manages_club = any(club.id == event.club_id for club in current_user.managed_clubs)
+        if not user_manages_club:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to update this event"
+            )
 
     # Update event fields
     for field, value in event_data.dict(exclude_unset=True).items():
@@ -183,6 +193,10 @@ async def approve_event(
     event.status = approval_data.status
     event.approved_by_id = current_user.id
 
+    # Add rejection reason if provided
+    if approval_data.rejection_reason:
+        event.rejection_reason = approval_data.rejection_reason
+
     db.commit()
     db.refresh(event)
 
@@ -204,7 +218,7 @@ async def delete_event(
         current_user: Current authenticated user
 
     Raises:
-        HTTPException: If event not found
+        HTTPException: If event not found or unauthorized
     """
     event = db.query(Event).filter(Event.id == event_id).first()
 
@@ -213,6 +227,16 @@ async def delete_event(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found"
         )
+
+    # Authorization check: only the club manager who manages this event's club or admin can delete
+    if current_user.role != UserRole.ADMIN:
+        # Check if the user manages the club that owns this event
+        user_manages_club = any(club.id == event.club_id for club in current_user.managed_clubs)
+        if not user_manages_club:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to delete this event"
+            )
 
     db.delete(event)
     db.commit()

@@ -42,6 +42,7 @@ class EventResponse(EventBase):
     club_id: int
     room_id: Optional[int]
     status: EventStatus
+    rejection_reason: Optional[str]
     created_at: datetime
     approved_by_id: Optional[int]
 
@@ -52,3 +53,4 @@ class EventResponse(EventBase):
 # Schema for event approval
 class EventApproval(BaseModel):
     status: EventStatus
+    rejection_reason: Optional[str] = None

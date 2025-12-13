@@ -38,6 +38,7 @@ class Event(Base):
 
     # Status and approval
     status = Column(SQLEnum(EventStatus), default=EventStatus.PENDING, nullable=False)
+    rejection_reason = Column(Text, nullable=True)
 
     # Foreign keys
     club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)

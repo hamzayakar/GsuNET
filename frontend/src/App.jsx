@@ -11,6 +11,8 @@ import Home from './pages/Home';
 import Clubs from './pages/Clubs';
 import ClubDetail from './pages/ClubDetail';
 import ApprovalPanel from './pages/ApprovalPanel';
+import CreateEvent from './pages/CreateEvent';
+import EventDetail from './pages/EventDetail';
 
 function App() {
   return (
@@ -54,6 +56,22 @@ function App() {
                 element={
                   <ProtectedRoute roles={['advisor', 'admin']}>
                     <ApprovalPanel />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/create-event"
+                element={
+                  <ProtectedRoute roles={['club_manager', 'admin']}>
+                    <CreateEvent />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/event/:id"
+                element={
+                  <ProtectedRoute>
+                    <EventDetail />
                   </ProtectedRoute>
                 }
               />

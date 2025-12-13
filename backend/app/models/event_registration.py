@@ -1,7 +1,7 @@
 """
 Event Registration model for tracking user event registrations
 """
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -10,6 +10,9 @@ from app.core.database import Base
 class EventRegistration(Base):
     """Event Registration model"""
     __tablename__ = "event_registrations"
+    __table_args__ = (
+        UniqueConstraint('user_id', 'event_id', name='unique_user_event_registration'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
 

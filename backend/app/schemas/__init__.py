@@ -30,6 +30,12 @@ from app.schemas.room import (
     RoomResponse,
     RoomRecommendationQuery,
 )
+from app.schemas.event_registration import (
+    EventRegistrationBase,
+    EventRegistrationCreate,
+    EventRegistrationResponse,
+    EventRegistrationListResponse,
+)
 
 __all__ = [
     # User schemas
@@ -57,4 +63,9 @@ __all__ = [
     "RoomUpdate",
     "RoomResponse",
     "RoomRecommendationQuery",
+    # Event Registration schemas
+    "EventRegistrationBase",
+    "EventRegistrationCreate",
+    "EventRegistrationResponse",
+    "EventRegistrationListResponse",
 ]

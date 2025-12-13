@@ -121,6 +121,27 @@ export const eventsAPI = {
     const response = await api.delete(`/events/${id}`);
     return response.data;
   },
+
+  // Event registration endpoints
+  register: async (eventId) => {
+    const response = await api.post(`/events/${eventId}/register`);
+    return response.data;
+  },
+
+  unregister: async (eventId) => {
+    const response = await api.delete(`/events/${eventId}/unregister`);
+    return response.data;
+  },
+
+  getRegistrations: async (eventId) => {
+    const response = await api.get(`/events/${eventId}/registrations`);
+    return response.data;
+  },
+
+  getMyRegistrations: async () => {
+    const response = await api.get('/users/me/registrations');
+    return response.data;
+  },
 };
 
 // Clubs API
