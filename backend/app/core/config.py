@@ -2,11 +2,12 @@
 Application configuration settings
 """
 from pydantic_settings import BaseSettings
-from typing import Optional
+from typing import Optional, List
+import os
 
 
 class Settings(BaseSettings):
-    """Application settings"""
+    """Application settings - loaded from .env file"""
 
     # Application
     APP_NAME: str = "GSUNET API"
@@ -14,21 +15,28 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # Database
-    DATABASE_URL: str = "postgresql://gsu_user:gsu_password@localhost:5432/gsunet_db"
+    DATABASE_URL: str
 
     # Security
-    SECRET_KEY: str = "your-secret-key-change-this-in-production"  # Change in production!
+    SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080  # 7 days
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
 
-    # CORS
-    BACKEND_CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
+    # CORS - will be parsed from comma-separated string in .env
+    BACKEND_CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     class Config:
         case_sensitive = True
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+    @property
+    def cors_origins(self) -> List[str]:
+        """Parse CORS origins from comma-separated string"""
+        return [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(",")]
 
 
 settings = Settings()
