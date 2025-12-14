@@ -171,6 +171,27 @@ export const clubsAPI = {
     const response = await api.delete(`/clubs/${id}`);
     return response.data;
   },
+
+  // Club follow/unfollow
+  follow: async (id) => {
+    const response = await api.post(`/clubs/${id}/follow`);
+    return response.data;
+  },
+
+  unfollow: async (id) => {
+    const response = await api.delete(`/clubs/${id}/unfollow`);
+    return response.data;
+  },
+
+  getFollowers: async (id) => {
+    const response = await api.get(`/clubs/${id}/followers`);
+    return response.data;
+  },
+
+  getMyFollowedClubs: async () => {
+    const response = await api.get('/users/me/followed-clubs');
+    return response.data;
+  },
 };
 
 // Rooms API

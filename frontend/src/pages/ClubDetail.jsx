@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { clubsAPI, eventsAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import EventCard from '../components/EventCard';
 
 const ClubDetail = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   const [club, setClub] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     fetchClubData();
@@ -26,11 +31,53 @@ const ClubDetail = () => {
       // Fetch club events
       const eventsData = await eventsAPI.getAll({ club_id: id });
       setEvents(eventsData);
+
+      // Check if user is following this club
+      if (user) {
+        const followedClubs = await clubsAPI.getMyFollowedClubs();
+        const isAlreadyFollowing = followedClubs.some(
+          (followedClub) => followedClub.id === parseInt(id)
+        );
+        setIsFollowing(isAlreadyFollowing);
+      }
     } catch (err) {
       setError('Failed to load club details. Please try again later.');
       console.error('Error fetching club:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!user) {
+      toast.error('Please log in to follow clubs');
+      return;
+    }
+
+    try {
+      setFollowLoading(true);
+      await clubsAPI.follow(parseInt(id));
+      setIsFollowing(true);
+      toast.success(`You are now following ${club.name}!`);
+    } catch (err) {
+      console.error('Failed to follow club:', err);
+      toast.error(err.response?.data?.detail || 'Failed to follow club');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    try {
+      setFollowLoading(true);
+      await clubsAPI.unfollow(parseInt(id));
+      setIsFollowing(false);
+      toast.success(`You unfollowed ${club.name}`);
+    } catch (err) {
+      console.error('Failed to unfollow club:', err);
+      toast.error(err.response?.data?.detail || 'Failed to unfollow club');
+    } finally {
+      setFollowLoading(false);
     }
   };
 
@@ -69,7 +116,23 @@ const ClubDetail = () => {
           </div>
         )}
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{club.name}</h1>
+        <div className="flex items-start justify-between mb-4">
+          <h1 className="text-3xl font-bold text-gray-900">{club.name}</h1>
+
+          {user && (
+            <button
+              onClick={isFollowing ? handleUnfollow : handleFollow}
+              disabled={followLoading}
+              className={`px-6 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isFollowing
+                  ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                  : 'bg-red-600 text-white hover:bg-red-700'
+              }`}
+            >
+              {followLoading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
+            </button>
+          )}
+        </div>
 
         {club.description && (
           <p className="text-gray-600 mb-4">{club.description}</p>
