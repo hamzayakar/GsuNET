@@ -26,6 +26,7 @@ from app.models import (
     EventRegistration, Notification, NotificationType
 )
 from passlib.context import CryptContext
+from sqlalchemy import text
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -586,7 +587,7 @@ def create_test_data():
         db.query(Room).delete()
         db.query(Club).delete()
         # Clear follow relationships (many-to-many)
-        db.execute("DELETE FROM user_club_association")
+        db.execute(text("DELETE FROM user_club_association"))
         db.query(User).delete()
         db.commit()
         print("   ✅ Database cleaned\n")
