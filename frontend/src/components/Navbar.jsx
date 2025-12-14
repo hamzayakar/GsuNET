@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useState } from 'react';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -63,11 +64,22 @@ const Navbar = () => {
                       {t('approvalPanel')}
                     </Link>
                   )}
+                  {user?.role === 'admin' && (
+                    <Link
+                      to="/admin"
+                      className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      {t('adminPanel') || 'Admin Panel'}
+                    </Link>
+                  )}
                 </div>
               )}
             </div>
 
             <div className="flex items-center space-x-3">
+              {/* Notification Bell - Only for logged in users */}
+              {isAuthenticated() && <NotificationBell />}
+
               {/* Language Switcher */}
               <div className="relative">
                 <button
@@ -188,6 +200,18 @@ const Navbar = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="text-xs mt-1">{t('approve')}</span>
+              </Link>
+            )}
+
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <span className="text-xs mt-1">Admin</span>
               </Link>
             )}
 

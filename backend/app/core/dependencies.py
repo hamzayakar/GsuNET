@@ -97,3 +97,24 @@ def require_role(required_roles: list[UserRole]):
         return current_user
 
     return role_checker
+
+
+async def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """
+    Require admin role
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        User object
+
+    Raises:
+        HTTPException: If user is not admin
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user

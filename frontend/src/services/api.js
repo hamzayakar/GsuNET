@@ -257,4 +257,32 @@ export const notificationsAPI = {
   },
 };
 
+// User Management API (Admin only)
+export const usersAPI = {
+  // Get all users (admin only)
+  getAll: async (params = {}) => {
+    const queryParams = new URLSearchParams(params).toString();
+    const response = await api.get(`/users?${queryParams}`);
+    return response.data;
+  },
+
+  // Get user by ID (admin only)
+  getById: async (id) => {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  },
+
+  // Update user (admin only)
+  update: async (id, data) => {
+    const response = await api.put(`/users/${id}`, data);
+    return response.data;
+  },
+
+  // Delete user (admin only)
+  delete: async (id) => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  },
+};
+
 export default api;

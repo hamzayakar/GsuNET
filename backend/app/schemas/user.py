@@ -85,6 +85,24 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     department: Optional[str] = None
     student_number: Optional[str] = None
+    role: Optional[UserRole] = None
+
+    class Config:
+        from_attributes = True
+
+
+# Schema for user list response (lighter than full UserResponse)
+class UserListResponse(BaseModel):
+    id: int
+    email: EmailStr
+    full_name: str
+    student_number: Optional[str]
+    department: Optional[str]
+    role: UserRole
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 # Schema for user response
