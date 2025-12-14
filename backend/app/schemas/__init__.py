@@ -36,6 +36,13 @@ from app.schemas.event_registration import (
     EventRegistrationResponse,
     EventRegistrationListResponse,
 )
+from app.schemas.notification import (
+    NotificationBase,
+    NotificationCreate,
+    NotificationUpdate,
+    NotificationResponse,
+    NotificationMarkAllRead,
+)
 
 __all__ = [
     # User schemas
@@ -68,4 +75,10 @@ __all__ = [
     "EventRegistrationCreate",
     "EventRegistrationResponse",
     "EventRegistrationListResponse",
+    # Notification schemas
+    "NotificationBase",
+    "NotificationCreate",
+    "NotificationUpdate",
+    "NotificationResponse",
+    "NotificationMarkAllRead",
 ]

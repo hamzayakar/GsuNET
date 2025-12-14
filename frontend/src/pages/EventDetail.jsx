@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { eventsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -52,10 +53,10 @@ const EventDetail = () => {
       setRegistering(true);
       await eventsAPI.register(parseInt(id));
       setIsRegistered(true);
-      alert('Successfully registered for the event!');
+      toast.success('Successfully registered for the event!');
     } catch (err) {
       console.error('Failed to register:', err);
-      alert(err.response?.data?.detail || 'Failed to register for event');
+      toast.error(err.response?.data?.detail || 'Failed to register for event');
     } finally {
       setRegistering(false);
     }
@@ -66,10 +67,10 @@ const EventDetail = () => {
       setRegistering(true);
       await eventsAPI.unregister(parseInt(id));
       setIsRegistered(false);
-      alert('Successfully unregistered from the event');
+      toast.success('Successfully unregistered from the event');
     } catch (err) {
       console.error('Failed to unregister:', err);
-      alert(err.response?.data?.detail || 'Failed to unregister from event');
+      toast.error(err.response?.data?.detail || 'Failed to unregister from event');
     } finally {
       setRegistering(false);
     }
