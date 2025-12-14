@@ -285,4 +285,43 @@ export const usersAPI = {
   },
 };
 
+// Club Join Requests API
+export const clubJoinRequestsAPI = {
+  // Create a join request
+  create: async (clubId, message = null) => {
+    const response = await api.post('/club-join-requests', {
+      club_id: clubId,
+      message,
+    });
+    return response.data;
+  },
+
+  // Get my join requests
+  getMyRequests: async () => {
+    const response = await api.get('/club-join-requests/my-requests');
+    return response.data;
+  },
+
+  // Get join requests for a specific club (managers only)
+  getClubRequests: async (clubId) => {
+    const response = await api.get(`/club-join-requests/club/${clubId}`);
+    return response.data;
+  },
+
+  // Review a join request (approve/reject) - managers only
+  review: async (requestId, status, rejectionReason = null) => {
+    const response = await api.put(`/club-join-requests/${requestId}/review`, {
+      status,
+      rejection_reason: rejectionReason,
+    });
+    return response.data;
+  },
+
+  // Cancel a pending join request
+  cancel: async (requestId) => {
+    const response = await api.delete(`/club-join-requests/${requestId}`);
+    return response.data;
+  },
+};
+
 export default api;

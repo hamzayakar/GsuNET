@@ -1,7 +1,7 @@
 """
 Event model for club activities and events
 """
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum as SQLEnum, CheckConstraint, Index
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum as SQLEnum, CheckConstraint, Index, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -47,6 +47,9 @@ class Event(Base):
     status = Column(SQLEnum(EventStatus), default=EventStatus.PENDING, nullable=False, index=True)
     rejection_reason = Column(Text, nullable=True)
 
+    # Access control
+    members_only = Column(Boolean, default=False, nullable=False)
+
     # Foreign keys
     club_id = Column(Integer, ForeignKey("clubs.id", ondelete="CASCADE"), nullable=False)
     room_id = Column(Integer, ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True)
@@ -57,6 +60,11 @@ class Event(Base):
     room = relationship("Room", back_populates="events")
     approved_by = relationship("User", foreign_keys=[approved_by_id])
     registrations = relationship("EventRegistration", back_populates="event")
+
+    @property
+    def registration_count(self):
+        """Get the current number of registrations for this event"""
+        return len(self.registrations)
 
     def __repr__(self):
         return f"<Event {self.title}>"

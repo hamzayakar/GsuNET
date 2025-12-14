@@ -30,7 +30,11 @@ const CreateEvent = () => {
   useEffect(() => {
     const fetchClubs = async () => {
       try {
-        const data = await clubsAPI.getAll();
+        const allClubs = await clubsAPI.getAll();
+        // Filter clubs for club managers to only show their clubs
+        const data = user?.role === "club_manager" && user?.managed_clubs
+          ? allClubs.filter(club => user.managed_clubs.some(mc => mc.id === club.id))
+          : allClubs;
         setClubs(data);
 
         // If user is a club manager, pre-select their club
@@ -127,7 +131,7 @@ const CreateEvent = () => {
       <div className="max-w-3xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-8">
-            {t('createEvent') || 'Create Event'}
+            {t('createEvent')}
           </h1>
 
           {error && (
@@ -140,7 +144,7 @@ const CreateEvent = () => {
             {/* Title */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Event Title *
+                {t('eventTitle')} *
               </label>
               <input
                 type="text"
@@ -150,14 +154,14 @@ const CreateEvent = () => {
                 value={formData.title}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter event title"
+                placeholder={t('enterEventTitle')}
               />
             </div>
 
             {/* Description */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                {t('description')}
               </label>
               <textarea
                 id="description"
@@ -166,14 +170,14 @@ const CreateEvent = () => {
                 value={formData.description}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter event description"
+                placeholder={t('enterEventDescription')}
               />
             </div>
 
             {/* Date and Time */}
             <div>
               <label htmlFor="event_datetime" className="block text-sm font-medium text-gray-700 mb-2">
-                Date and Time *
+                {t('dateAndTime')} *
               </label>
               <input
                 type="datetime-local"
@@ -189,7 +193,7 @@ const CreateEvent = () => {
             {/* Club Selection */}
             <div>
               <label htmlFor="club_id" className="block text-sm font-medium text-gray-700 mb-2">
-                Club *
+                {t('club')} *
               </label>
               <select
                 id="club_id"
@@ -199,7 +203,7 @@ const CreateEvent = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
-                <option value="">Select a club</option>
+                <option value="">{t('selectClub')}</option>
                 {clubs.map((club) => (
                   <option key={club.id} value={club.id}>
                     {club.name}
@@ -211,7 +215,7 @@ const CreateEvent = () => {
             {/* Expected Capacity */}
             <div>
               <label htmlFor="expected_capacity" className="block text-sm font-medium text-gray-700 mb-2">
-                Expected Number of Participants *
+                {t('expectedNumberOfParticipants')} *
               </label>
               <input
                 type="number"
@@ -222,11 +226,11 @@ const CreateEvent = () => {
                 value={formData.expected_capacity}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter expected capacity"
+                placeholder={t('enterExpectedCapacity')}
               />
               {formData.expected_capacity && (
                 <p className="mt-1 text-sm text-gray-500">
-                  Room recommendations will appear below based on this capacity
+                  {t('roomRecommendationsHelp')}
                 </p>
               )}
             </div>
@@ -234,7 +238,7 @@ const CreateEvent = () => {
             {/* Max Capacity */}
             <div>
               <label htmlFor="max_capacity" className="block text-sm font-medium text-gray-700 mb-2">
-                Maximum Capacity *
+                {t('maxCapacity')} *
               </label>
               <input
                 type="number"
@@ -245,7 +249,7 @@ const CreateEvent = () => {
                 value={formData.max_capacity}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter maximum capacity"
+                placeholder={t('enterMaxCapacity')}
               />
             </div>
 
@@ -253,7 +257,7 @@ const CreateEvent = () => {
             {recommendedRooms.length > 0 && (
               <div>
                 <label htmlFor="room_id" className="block text-sm font-medium text-gray-700 mb-2">
-                  Recommended Rooms
+                  {t('recommendedRooms')}
                 </label>
                 <select
                   id="room_id"
@@ -262,15 +266,15 @@ const CreateEvent = () => {
                   onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
-                  <option value="">Select a room (optional)</option>
+                  <option value="">{t('selectRoom')}</option>
                   {recommendedRooms.map((room) => (
                     <option key={room.id} value={room.id}>
-                      {room.name} (Capacity: {room.capacity})
+                      {room.name} ({t('capacity')}: {room.capacity})
                     </option>
                   ))}
                 </select>
                 <p className="mt-1 text-sm text-gray-500">
-                  These rooms are recommended based on your expected capacity
+                  {t('theseRoomsRecommended')}
                 </p>
               </div>
             )}
@@ -278,7 +282,7 @@ const CreateEvent = () => {
             {/* Location (Manual) */}
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Location
+                {t('location')}
               </label>
               <input
                 type="text"
@@ -287,14 +291,14 @@ const CreateEvent = () => {
                 value={formData.location}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="Enter location (auto-filled if room selected)"
+                placeholder={t('enterLocation')}
               />
             </div>
 
             {/* Image URL (Optional) */}
             <div>
               <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-2">
-                Image URL (Optional)
+                {t('imageUrl')}
               </label>
               <input
                 type="url"
@@ -314,14 +318,14 @@ const CreateEvent = () => {
                 disabled={loading}
                 className="flex-1 bg-red-600 text-white py-3 px-6 rounded-md font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Creating...' : 'Create Event'}
+                {loading ? t('creating') : t('createEvent')}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/')}
                 className="px-6 py-3 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           </form>

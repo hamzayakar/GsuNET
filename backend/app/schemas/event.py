@@ -16,6 +16,7 @@ class EventBase(BaseModel):
     expected_capacity: Optional[int] = None
     max_capacity: Optional[int] = None
     image_url: Optional[str] = None
+    members_only: bool = False
 
 
 # Schema for creating an event
@@ -34,6 +35,7 @@ class EventUpdate(BaseModel):
     max_capacity: Optional[int] = None
     image_url: Optional[str] = None
     room_id: Optional[int] = None
+    members_only: Optional[bool] = None
 
 
 # Schema for event response
@@ -45,6 +47,8 @@ class EventResponse(EventBase):
     rejection_reason: Optional[str]
     created_at: datetime
     approved_by_id: Optional[int]
+    registration_count: int = 0
+    members_only: bool = False
 
     class Config:
         from_attributes = True

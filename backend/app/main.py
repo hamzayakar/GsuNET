@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine
-from app.routes import auth, events, rooms, clubs, registrations, notifications, users
+from app.routes import auth, events, rooms, clubs, registrations, notifications, users, club_join_requests
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -36,6 +36,7 @@ app.include_router(registrations.router, prefix=settings.API_V1_STR)
 app.include_router(registrations.user_router, prefix=settings.API_V1_STR)
 app.include_router(notifications.router, prefix=settings.API_V1_STR)
 app.include_router(users.router, prefix=settings.API_V1_STR)
+app.include_router(club_join_requests.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")

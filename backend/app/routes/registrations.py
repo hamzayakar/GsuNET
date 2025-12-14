@@ -53,6 +53,18 @@ async def register_for_event(
             detail="Can only register for approved events"
         )
 
+    # Check if event is members-only
+    if event.members_only:
+        # Check if user is a member of the club
+        is_member = current_user in event.club.members
+        is_manager = any(club.id == event.club_id for club in current_user.managed_clubs)
+
+        if not is_member and not is_manager and current_user.role != UserRole.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This event is for club members only"
+            )
+
     # Check event capacity
     if event.max_capacity:
         current_registrations = db.query(EventRegistration).filter(

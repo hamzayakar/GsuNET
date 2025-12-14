@@ -6,20 +6,21 @@ const ApprovalPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [processingId, setProcessingId] = useState(null);
+  const [filter, setFilter] = useState('pending'); // 'pending' or 'rejected'
 
   useEffect(() => {
-    fetchPendingEvents();
-  }, []);
+    fetchEvents();
+  }, [filter]);
 
-  const fetchPendingEvents = async () => {
+  const fetchEvents = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const data = await eventsAPI.getAll({ status: 'pending' });
+      const data = await eventsAPI.getAll({ status: filter });
       setEvents(data);
     } catch (err) {
-      setError('Failed to load pending events. Please try again later.');
+      setError(`Failed to load ${filter} events. Please try again later.`);
       console.error('Error fetching events:', err);
     } finally {
       setLoading(false);
@@ -32,10 +33,26 @@ const ApprovalPanel = () => {
 
     try {
       await eventsAPI.approve(eventId, status, rejectionReason);
-      // Remove the event from the list after approval/rejection
+      // Remove the event from the list after approval/rejection/un-rejection
       setEvents(events.filter((event) => event.id !== eventId));
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to process event. Please try again.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleUnreject = async (eventId) => {
+    setProcessingId(eventId);
+    setError('');
+
+    try {
+      // Change status back to pending
+      await eventsAPI.approve(eventId, 'pending', null);
+      // Remove from rejected list
+      setEvents(events.filter((event) => event.id !== eventId));
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Failed to un-reject event. Please try again.');
     } finally {
       setProcessingId(null);
     }
@@ -57,8 +74,32 @@ const ApprovalPanel = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Event Approval Panel</h1>
         <p className="mt-2 text-gray-600">
-          Review and approve/reject pending event requests
+          Review and manage event approval requests
         </p>
+
+        {/* Filter Buttons */}
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={() => setFilter('pending')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              filter === 'pending'
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Pending Events
+          </button>
+          <button
+            onClick={() => setFilter('rejected')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              filter === 'rejected'
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Rejected Events
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -86,9 +127,13 @@ const ApprovalPanel = () => {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No pending events</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            {filter === 'pending' ? 'No pending events' : 'No rejected events'}
+          </h3>
           <p className="mt-1 text-sm text-gray-500">
-            All events have been reviewed.
+            {filter === 'pending'
+              ? 'All events have been reviewed.'
+              : 'No events have been rejected.'}
           </p>
         </div>
       ) : (
@@ -105,8 +150,12 @@ const ApprovalPanel = () => {
                       <h3 className="text-xl font-bold text-gray-900 mb-2">
                         {event.title}
                       </h3>
-                      <span className="ml-2 px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        Pending
+                      <span className={`ml-2 px-3 py-1 text-xs font-semibold rounded-full ${
+                        filter === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {filter === 'pending' ? 'Pending' : 'Rejected'}
                       </span>
                     </div>
 
@@ -195,33 +244,67 @@ const ApprovalPanel = () => {
                         </div>
                       )}
                     </div>
+
+                    {/* Rejection Information (for rejected events) */}
+                    {filter === 'rejected' && (
+                      <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                        <div className="flex items-start gap-2 mb-2">
+                          <svg className="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <div className="flex-1">
+                            <h4 className="text-sm font-semibold text-red-900">Rejection Reason:</h4>
+                            <p className="text-sm text-red-700 mt-1">
+                              {event.rejection_reason || 'No reason provided'}
+                            </p>
+                          </div>
+                        </div>
+                        {event.updated_at && (
+                          <p className="text-xs text-red-600 mt-2">
+                            <span className="font-medium">Rejected on:</span> {formatDate(event.updated_at)}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => handleApproval(event.id, 'approved')}
-                    disabled={processingId === event.id}
-                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {processingId === event.id ? 'Processing...' : 'Approve'}
-                  </button>
+                  {filter === 'pending' ? (
+                    <>
+                      <button
+                        onClick={() => handleApproval(event.id, 'approved')}
+                        disabled={processingId === event.id}
+                        className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {processingId === event.id ? 'Processing...' : 'Approve'}
+                      </button>
 
-                  <button
-                    onClick={() => {
-                      const reason = prompt(
-                        'Please provide a reason for rejection (optional):'
-                      );
-                      if (reason !== null) {
-                        handleApproval(event.id, 'rejected', reason || null);
-                      }
-                    }}
-                    disabled={processingId === event.id}
-                    className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Reject
-                  </button>
+                      <button
+                        onClick={() => {
+                          const reason = prompt(
+                            'Please provide a reason for rejection (optional):'
+                          );
+                          if (reason !== null) {
+                            handleApproval(event.id, 'rejected', reason || null);
+                          }
+                        }}
+                        disabled={processingId === event.id}
+                        className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleUnreject(event.id)}
+                      disabled={processingId === event.id}
+                      className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {processingId === event.id ? 'Processing...' : 'Un-reject (Return to Pending)'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

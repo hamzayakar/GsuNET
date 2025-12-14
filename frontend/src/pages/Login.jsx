@@ -90,7 +90,13 @@ const Login = () => {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="flex items-center justify-between text-sm">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-red-600 hover:text-red-700"
+            >
+              {t('forgotPassword')}
+            </Link>
             <Link
               to="/register"
               className="font-medium text-red-600 hover:text-red-700"

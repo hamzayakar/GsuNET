@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { clubsAPI, eventsAPI } from '../services/api';
+import { clubsAPI, eventsAPI, clubJoinRequestsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import EventCard from '../components/EventCard';
 
@@ -14,6 +14,10 @@ const ClubDetail = () => {
   const [error, setError] = useState('');
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [isMember, setIsMember] = useState(false);
+  const [joinRequest, setJoinRequest] = useState(null);
+  const [joinRequests, setJoinRequests] = useState([]);
+  const [isManager, setIsManager] = useState(false);
 
   useEffect(() => {
     fetchClubData();
@@ -39,6 +43,28 @@ const ClubDetail = () => {
           (followedClub) => followedClub.id === parseInt(id)
         );
         setIsFollowing(isAlreadyFollowing);
+
+        // Check if user is a member of this club
+        const clubMemberIds = clubData.members?.map(m => m.id) || [];
+        setIsMember(clubMemberIds.includes(user.id));
+
+        // Check if user is a manager of this club
+        const clubManagerIds = clubData.managers?.map(m => m.id) || [];
+        const userIsManager = clubManagerIds.includes(user.id) || user.role === 'admin';
+        setIsManager(userIsManager);
+
+        // Get user's join request status for this club
+        const myRequests = await clubJoinRequestsAPI.getMyRequests();
+        const existingRequest = myRequests.find(
+          req => req.club_id === parseInt(id) && req.status === 'pending'
+        );
+        setJoinRequest(existingRequest);
+
+        // If user is a manager, get all join requests for this club
+        if (userIsManager) {
+          const clubRequests = await clubJoinRequestsAPI.getClubRequests(id);
+          setJoinRequests(clubRequests.filter(req => req.status === 'pending'));
+        }
       }
     } catch (err) {
       setError('Failed to load club details. Please try again later.');
@@ -81,6 +107,51 @@ const ClubDetail = () => {
     }
   };
 
+  const handleRequestJoin = async () => {
+    try {
+      const response = await clubJoinRequestsAPI.create(parseInt(id));
+      setJoinRequest(response);
+      toast.success('Join request sent! Club managers will review your request.');
+    } catch (err) {
+      console.error('Failed to request join:', err);
+      toast.error(err.response?.data?.detail || 'Failed to send join request');
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    try {
+      await clubJoinRequestsAPI.cancel(joinRequest.id);
+      setJoinRequest(null);
+      toast.success('Join request cancelled');
+    } catch (err) {
+      console.error('Failed to cancel request:', err);
+      toast.error(err.response?.data?.detail || 'Failed to cancel request');
+    }
+  };
+
+  const handleApproveRequest = async (requestId) => {
+    try {
+      await clubJoinRequestsAPI.review(requestId, 'approved');
+      toast.success('Join request approved!');
+      fetchClubData(); // Refresh to update member count and requests
+    } catch (err) {
+      console.error('Failed to approve request:', err);
+      toast.error(err.response?.data?.detail || 'Failed to approve request');
+    }
+  };
+
+  const handleRejectRequest = async (requestId) => {
+    try {
+      const reason = prompt('Enter rejection reason (optional):');
+      await clubJoinRequestsAPI.review(requestId, 'rejected', reason);
+      toast.success('Join request rejected');
+      fetchClubData(); // Refresh to update requests
+    } catch (err) {
+      console.error('Failed to reject request:', err);
+      toast.error(err.response?.data?.detail || 'Failed to reject request');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -120,17 +191,41 @@ const ClubDetail = () => {
           <h1 className="text-3xl font-bold text-gray-900">{club.name}</h1>
 
           {user && (
-            <button
-              onClick={isFollowing ? handleUnfollow : handleFollow}
-              disabled={followLoading}
-              className={`px-6 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                isFollowing
-                  ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                  : 'bg-red-600 text-white hover:bg-red-700'
-              }`}
-            >
-              {followLoading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
-            </button>
+            <div className="flex gap-2">
+              {!isMember && !isManager && (
+                joinRequest ? (
+                  <button
+                    onClick={handleCancelRequest}
+                    className="px-6 py-2 rounded-md font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                  >
+                    Request Pending
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRequestJoin}
+                    className="px-6 py-2 rounded-md font-medium bg-green-600 text-white hover:bg-green-700"
+                  >
+                    Request to Join
+                  </button>
+                )
+              )}
+              {isMember && (
+                <span className="px-6 py-2 rounded-md font-medium bg-blue-100 text-blue-800">
+                  Member
+                </span>
+              )}
+              <button
+                onClick={isFollowing ? handleUnfollow : handleFollow}
+                disabled={followLoading}
+                className={`px-6 py-2 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isFollowing
+                    ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {followLoading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -176,6 +271,48 @@ const ClubDetail = () => {
           )}
         </div>
       </div>
+
+      {/* Join Requests Section (for managers only) */}
+      {isManager && joinRequests.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Pending Join Requests ({joinRequests.length})
+          </h2>
+          <div className="space-y-4">
+            {joinRequests.map((request) => (
+              <div
+                key={request.id}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{request.user.full_name}</p>
+                  <p className="text-sm text-gray-600">{request.user.email}</p>
+                  {request.message && (
+                    <p className="text-sm text-gray-500 mt-1 italic">"{request.message}"</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    Requested: {new Date(request.requested_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleApproveRequest(request.id)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm font-medium"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => handleRejectRequest(request.id)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 text-sm font-medium"
+                  >
+                    Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Club Events */}
       <div>

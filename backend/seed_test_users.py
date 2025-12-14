@@ -81,6 +81,30 @@ def create_users(db):
             "student_number": "2021002",
             "department": "Industrial Engineering",
             "role": UserRole.CLUB_MANAGER
+        },
+        {
+            "email": "student2@gsu.edu.tr",
+            "password": "Test123!",
+            "full_name": "Can Yılmaz",
+            "student_number": "2023001",
+            "department": "Business Administration",
+            "role": UserRole.STUDENT
+        },
+        {
+            "email": "student3@gsu.edu.tr",
+            "password": "Test456!",
+            "full_name": "Deniz Özkan",
+            "student_number": "2023002",
+            "department": "Law",
+            "role": UserRole.STUDENT
+        },
+        {
+            "email": "student4@gsu.edu.tr",
+            "password": "Test789!",
+            "full_name": "Ece Arslan",
+            "student_number": "2022002",
+            "department": "Economics",
+            "role": UserRole.STUDENT
         }
     ]
 
@@ -292,6 +316,45 @@ def create_events(db, clubs, rooms, users):
             "status": EventStatus.COMPLETED,
             "club_id": cs_club.id,
             "room_id": rooms["D201 - Medium Classroom"].id,
+            "approved_by_id": advisor.id
+        },
+        # EDGE CASE - Very large event
+        {
+            "title": "Tech Career Fair 2025",
+            "description": "Annual tech career fair with 50+ companies",
+            "event_datetime": datetime.now(timezone.utc) + timedelta(days=45),
+            "location": "Sports Hall",
+            "expected_capacity": 400,
+            "max_capacity": 500,
+            "status": EventStatus.APPROVED,
+            "club_id": cs_club.id,
+            "room_id": rooms["Sports Hall"].id,
+            "approved_by_id": advisor.id
+        },
+        # EDGE CASE - Small intimate event
+        {
+            "title": "Code Review Session",
+            "description": "Small group code review and pair programming",
+            "event_datetime": datetime.now(timezone.utc) + timedelta(days=4),
+            "location": "D103 - Meeting Room",
+            "expected_capacity": 8,
+            "max_capacity": 10,
+            "status": EventStatus.APPROVED,
+            "club_id": ai_club.id,
+            "room_id": rooms["D103 - Meeting Room"].id,
+            "approved_by_id": advisor.id
+        },
+        # Another REJECTED for testing
+        {
+            "title": "Overnight Hackathon",
+            "description": "24-hour coding marathon",
+            "event_datetime": datetime.now(timezone.utc) + timedelta(days=15),
+            "location": "Conference Hall",
+            "expected_capacity": 80,
+            "max_capacity": 100,
+            "status": EventStatus.REJECTED,
+            "rejection_reason": "Overnight events require special safety protocols. Please submit a revised proposal with security arrangements.",
+            "club_id": robotics_club.id,
             "approved_by_id": advisor.id
         }
     ]

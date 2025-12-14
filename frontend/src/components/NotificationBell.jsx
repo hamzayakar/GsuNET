@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { notificationsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -206,6 +207,19 @@ const NotificationBell = () => {
               ))
             )}
           </div>
+
+          {/* View All Link */}
+          {notifications.length > 0 && (
+            <div className="p-3 border-t border-gray-200 bg-gray-50">
+              <Link
+                to="/notifications"
+                onClick={() => setIsOpen(false)}
+                className="block w-full text-center text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
+              >
+                View All Notifications
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>

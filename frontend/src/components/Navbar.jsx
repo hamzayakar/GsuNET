@@ -48,6 +48,12 @@ const Navbar = () => {
                   >
                     {t('clubs')}
                   </Link>
+                  <Link
+                    to="/my-events"
+                    className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    {t('myEvents')}
+                  </Link>
                   {user?.role === 'club_manager' && (
                     <Link
                       to="/create-event"
@@ -179,6 +185,16 @@ const Navbar = () => {
               <span className="text-xs mt-1">{t('clubs')}</span>
             </Link>
 
+            <Link
+              to="/my-events"
+              className="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <span className="text-xs mt-1">{t('myEvents')}</span>
+            </Link>
+
             {user?.role === 'club_manager' && (
               <Link
                 to="/create-event"
@@ -228,21 +244,25 @@ const Navbar = () => {
         </nav>
       )}
 
-      {/* Mobile Top Bar - Logo & Language */}
+      {/* Mobile Top Bar - Logo, Notifications & Language */}
       <div className="md:hidden bg-white shadow-md fixed top-0 left-0 right-0 z-50">
         <div className="flex justify-between items-center h-14 px-4">
           <Link to="/" className="text-xl font-bold text-primary">
             GSUNET
           </Link>
 
-          {/* Mobile Language Switcher */}
-          <div className="relative">
-            <button
-              onClick={() => setShowLangMenu(!showLangMenu)}
-              className="flex items-center px-2 py-1 rounded hover:bg-gray-100"
-            >
-              <span className="text-lg">{currentLang?.flag}</span>
-            </button>
+          <div className="flex items-center space-x-2">
+            {/* Mobile Notifications */}
+            {isAuthenticated() && <NotificationBell />}
+
+            {/* Mobile Language Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center px-2 py-1 rounded hover:bg-gray-100"
+              >
+                <span className="text-lg">{currentLang?.flag}</span>
+              </button>
 
             {showLangMenu && (
               <div className="absolute right-0 mt-2 w-36 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
@@ -254,9 +274,9 @@ const Navbar = () => {
                         changeLanguage(lang.code);
                         setShowLangMenu(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm flex items-center space-x-2 hover:bg-gray-100 $${'{'}
+                      className={`w-full text-left px-3 py-2 text-sm flex items-center space-x-2 hover:bg-gray-100 ${
                         language === lang.code ? 'bg-gray-50 font-semibold' : ''
-                      ${'}'}`}
+                      }`}
                     >
                       <span>{lang.flag}</span>
                       <span className="text-gray-900">{lang.name}</span>
@@ -265,6 +285,7 @@ const Navbar = () => {
                 </div>
               </div>
             )}
+          </div>
           </div>
         </div>
       </div>

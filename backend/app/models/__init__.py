@@ -9,6 +9,7 @@ from app.models.room import Room
 from app.models.sponsorship import Sponsorship, SponsorshipStatus
 from app.models.event_registration import EventRegistration
 from app.models.notification import Notification, NotificationType
+from app.models.club_join_request import ClubJoinRequest, JoinRequestStatus
 
 __all__ = [
     "User",
@@ -22,4 +23,6 @@ __all__ = [
     "EventRegistration",
     "Notification",
     "NotificationType",
+    "ClubJoinRequest",
+    "JoinRequestStatus",
 ]

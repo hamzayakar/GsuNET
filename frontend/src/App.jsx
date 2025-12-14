@@ -8,9 +8,14 @@ import Navbar from './components/Navbar';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import Clubs from './pages/Clubs';
 import ClubDetail from './pages/ClubDetail';
+import MyEvents from './pages/MyEvents';
+import Notifications from './pages/Notifications';
+import Profile from './pages/Profile';
 import ApprovalPanel from './pages/ApprovalPanel';
 import CreateEvent from './pages/CreateEvent';
 import EventDetail from './pages/EventDetail';
@@ -51,6 +56,8 @@ function App() {
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               {/* Protected routes */}
               <Route
@@ -74,6 +81,30 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ClubDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-events"
+                element={
+                  <ProtectedRoute>
+                    <MyEvents />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <Notifications />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 }
               />

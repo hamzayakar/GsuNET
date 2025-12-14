@@ -43,6 +43,11 @@ from app.schemas.notification import (
     NotificationResponse,
     NotificationMarkAllRead,
 )
+from app.schemas.club_join_request import (
+    ClubJoinRequestCreate,
+    ClubJoinRequestReview,
+    ClubJoinRequestResponse,
+)
 
 __all__ = [
     # User schemas
@@ -81,4 +86,8 @@ __all__ = [
     "NotificationUpdate",
     "NotificationResponse",
     "NotificationMarkAllRead",
+    # Club Join Request schemas
+    "ClubJoinRequestCreate",
+    "ClubJoinRequestReview",
+    "ClubJoinRequestResponse",
 ]

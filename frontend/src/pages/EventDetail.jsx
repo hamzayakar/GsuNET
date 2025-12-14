@@ -218,7 +218,7 @@ const EventDetail = () => {
                 </div>
               )}
 
-              {/* Capacity */}
+              {/* Capacity and Registrations */}
               {event.max_capacity && (
                 <div className="flex items-start">
                   <svg
@@ -235,9 +235,9 @@ const EventDetail = () => {
                     />
                   </svg>
                   <div>
-                    <p className="text-sm text-gray-500">Capacity</p>
+                    <p className="text-sm text-gray-500">Capacity & Registrations</p>
                     <p className="text-lg text-gray-900">
-                      Max: {event.max_capacity}
+                      {event.registration_count || 0} / {event.max_capacity} registered
                       {event.expected_capacity && ` (Expected: ${event.expected_capacity})`}
                     </p>
                   </div>

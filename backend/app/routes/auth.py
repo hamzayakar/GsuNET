@@ -9,9 +9,11 @@ from datetime import timedelta
 from app.core.database import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.config import settings
-from app.models import User
+from app.models import User, Notification, NotificationType
 from app.schemas import UserCreate, UserResponse, UserLogin, Token
+from app.schemas.password_reset import PasswordResetRequest, PasswordReset
 from app.core.dependencies import get_current_user
+import secrets
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -67,6 +69,16 @@ async def register(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
+    # Create welcome notification
+    welcome_notification = Notification(
+        user_id=new_user.id,
+        title="Welcome to GSUNET!",
+        message=f"Hello {new_user.full_name}! Welcome to GSUNET - Galatasaray University Network. Explore campus events, join clubs, and stay connected with your university community.",
+        type=NotificationType.INFO
+    )
+    db.add(welcome_notification)
+    db.commit()
 
     return new_user
 
@@ -128,3 +140,77 @@ async def get_current_user_info(
         User information
     """
     return current_user
+
+
+# Simple in-memory storage for reset tokens (in production, use Redis or database)
+password_reset_tokens = {}
+
+
+@router.post("/forgot-password")
+async def request_password_reset(
+    request: PasswordResetRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Request password reset - generates token and logs it (demo mode)
+
+    In production, this would send an email with the reset link
+    """
+    # Check if user exists
+    user = db.query(User).filter(User.email == request.email).first()
+
+    if not user:
+        # Don't reveal if email exists for security
+        return {"message": "If the email exists, a reset link has been sent"}
+
+    # Generate secure random token
+    token = secrets.token_urlsafe(32)
+
+    # Store token with user email (expires in 1 hour in production)
+    password_reset_tokens[token] = user.email
+
+    # In production, send email here
+    # For demo, log the token
+    print(f"\n{'='*60}")
+    print(f"PASSWORD RESET TOKEN for {user.email}")
+    print(f"Token: {token}")
+    print(f"Reset URL: http://localhost:5173/reset-password?token={token}")
+    print(f"{'='*60}\n")
+
+    return {"message": "If the email exists, a reset link has been sent"}
+
+
+@router.post("/reset-password")
+async def reset_password(
+    reset_data: PasswordReset,
+    db: Session = Depends(get_db)
+):
+    """
+    Reset password using token
+    """
+    # Verify token exists
+    email = password_reset_tokens.get(reset_data.token)
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token"
+        )
+
+    # Get user
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Update password
+    user.password_hash = get_password_hash(reset_data.new_password)
+    db.commit()
+
+    # Remove used token
+    del password_reset_tokens[reset_data.token]
+
+    return {"message": "Password reset successful"}

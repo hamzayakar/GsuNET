@@ -4,13 +4,95 @@ Event management routes with approval workflow
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime, timezone, timedelta
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_active_user, require_role
-from app.models import Event, User, UserRole, EventStatus
+from app.models import Event, User, UserRole, EventStatus, Notification, NotificationType, EventRegistration
 from app.schemas import EventCreate, EventUpdate, EventResponse, EventApproval
 
 router = APIRouter(prefix="/events", tags=["Events"])
+
+
+def auto_complete_past_events(db: Session):
+    """
+    Automatically mark approved events as completed if their event_datetime has passed
+
+    Args:
+        db: Database session
+    """
+    now = datetime.now(timezone.utc)
+
+    # Find all approved events where event_datetime has passed
+    past_events = db.query(Event).filter(
+        Event.status == EventStatus.APPROVED,
+        Event.event_datetime < now
+    ).all()
+
+    # Mark them as completed
+    for event in past_events:
+        event.status = EventStatus.COMPLETED
+
+    if past_events:
+        db.commit()
+
+    return len(past_events)
+
+
+def send_event_reminders(db: Session):
+    """
+    Send reminder notifications to users for events happening in ~3 days
+
+    Finds events happening between 2.5 and 3.5 days from now and sends
+    reminder notifications to all registered users who haven't received
+    one yet.
+
+    Args:
+        db: Database session
+    """
+    now = datetime.now(timezone.utc)
+    reminder_start = now + timedelta(days=2, hours=12)  # 2.5 days
+    reminder_end = now + timedelta(days=3, hours=12)    # 3.5 days
+
+    # Find approved events happening in the reminder window
+    upcoming_events = db.query(Event).filter(
+        Event.status == EventStatus.APPROVED,
+        Event.event_datetime >= reminder_start,
+        Event.event_datetime <= reminder_end
+    ).all()
+
+    notifications_created = 0
+
+    for event in upcoming_events:
+        # Get all registered users for this event
+        registrations = db.query(EventRegistration).filter(
+            EventRegistration.event_id == event.id
+        ).all()
+
+        for registration in registrations:
+            # Check if user already has a reminder notification for this event
+            existing_reminder = db.query(Notification).filter(
+                Notification.user_id == registration.user_id,
+                Notification.notification_type == NotificationType.EVENT_REMINDER,
+                Notification.message.contains(f"event/{event.id}")  # Check if notification is for this event
+            ).first()
+
+            if not existing_reminder:
+                # Create reminder notification
+                notification = Notification(
+                    title=f"Reminder: {event.title}",
+                    message=f"Your registered event '{event.title}' is happening in 3 days on {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')}. Don't forget to attend! Click to view details: /event/{event.id}",
+                    notification_type=NotificationType.EVENT_REMINDER,
+                    user_id=registration.user_id,
+                    read=False
+                )
+                db.add(notification)
+                notifications_created += 1
+
+    if notifications_created > 0:
+        db.commit()
+
+    return notifications_created
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -54,6 +136,8 @@ async def list_events(
     """
     List events with optional filtering
 
+    Automatically marks past approved events as completed before returning results.
+
     Args:
         status: Filter by event status
         club_id: Filter by club ID
@@ -64,6 +148,12 @@ async def list_events(
     Returns:
         List of events
     """
+    # Auto-complete past events before fetching
+    auto_complete_past_events(db)
+
+    # Send event reminders for upcoming events
+    send_event_reminders(db)
+
     query = db.query(Event)
 
     if status:
@@ -71,10 +161,6 @@ async def list_events(
 
     if club_id:
         query = query.filter(Event.club_id == club_id)
-
-    # By default, show only approved events unless specifically filtered
-    if status is None:
-        query = query.filter(Event.status == EventStatus.APPROVED)
 
     events = query.offset(skip).limit(limit).all()
     return events
@@ -88,6 +174,8 @@ async def get_event(
     """
     Get event by ID
 
+    Automatically marks past approved events as completed before returning.
+
     Args:
         event_id: Event ID
         db: Database session
@@ -98,6 +186,9 @@ async def get_event(
     Raises:
         HTTPException: If event not found
     """
+    # Auto-complete past events before fetching
+    auto_complete_past_events(db)
+
     event = db.query(Event).filter(Event.id == event_id).first()
 
     if not event:
