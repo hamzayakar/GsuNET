@@ -19,8 +19,8 @@ class Club(Base):
     contact_email = Column(String, nullable=True)
 
     # Foreign keys
-    manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    advisor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    manager_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    advisor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

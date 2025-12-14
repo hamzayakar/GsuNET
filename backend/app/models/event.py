@@ -41,9 +41,9 @@ class Event(Base):
     rejection_reason = Column(Text, nullable=True)
 
     # Foreign keys
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
-    room_id = Column(Integer, ForeignKey("rooms.id"), nullable=True)
-    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    club_id = Column(Integer, ForeignKey("clubs.id", ondelete="CASCADE"), nullable=False)
+    room_id = Column(Integer, ForeignKey("rooms.id", ondelete="SET NULL"), nullable=True)
+    approved_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
 
     # Relationships
     club = relationship("Club", back_populates="events")

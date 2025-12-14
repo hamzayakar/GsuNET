@@ -20,8 +20,8 @@ class UserRole(str, enum.Enum):
 user_club_association = Table(
     'user_club_association',
     Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id')),
-    Column('club_id', Integer, ForeignKey('clubs.id'))
+    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE')),
+    Column('club_id', Integer, ForeignKey('clubs.id', ondelete='CASCADE'))
 )
 
 

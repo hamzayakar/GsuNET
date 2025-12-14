@@ -35,7 +35,7 @@ class Notification(Base):
     read = Column(Boolean, default=False)
 
     # Foreign keys
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -39,7 +39,7 @@ class Sponsorship(Base):
     status = Column(SQLEnum(SponsorshipStatus), default=SponsorshipStatus.PENDING, nullable=False)
 
     # Foreign keys
-    club_id = Column(Integer, ForeignKey("clubs.id"), nullable=False)
+    club_id = Column(Integer, ForeignKey("clubs.id", ondelete="CASCADE"), nullable=False)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
