@@ -16,7 +16,7 @@ Creates:
 import sys
 import os
 import copy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, time
 import random
 
 # Add the parent directory to the path to import app modules
@@ -26,7 +26,7 @@ from app.core.database import SessionLocal, Base, engine
 from app.models import (
     User, UserRole, Club, Event, EventStatus, Room,
     EventRegistration, Notification, NotificationType,
-    ClubJoinRequest, JoinRequestStatus
+    ClubJoinRequest, JoinRequestStatus, RoomSchedule, BlockType
 )
 from passlib.context import CryptContext
 from sqlalchemy import text
@@ -492,10 +492,24 @@ def create_events(db, clubs_list, rooms, users_by_role):
 
         room = get_room_for_capacity(max_capacity)
 
+        # Determine event duration (30-240 minutes)
+        # Workshops/talks: 60-120 min, competitions/performances: 120-180 min, bootcamps: 180-240 min
+        if 'Workshop' in title or 'Talk' in title or 'Session' in title:
+            duration = random.choice([60, 90, 120])
+        elif 'Bootcamp' in title or 'Hackathon' in title or 'Tournament' in title:
+            duration = random.choice([120, 180, 240])
+        else:
+            duration = random.choice([90, 120, 150])
+
+        # Calculate end_time from event_datetime + duration
+        end_time = event_datetime + timedelta(minutes=duration)
+
         event_dict = {
             "title": title,
             "description": description,
             "event_datetime": event_datetime,
+            "duration": duration,
+            "end_time": end_time,
             "location": room.location,
             "expected_capacity": expected_capacity,
             "max_capacity": max_capacity,
@@ -568,6 +582,120 @@ def create_registrations(db, events, users_by_role):
 
     print(f"   ✅ Created {len(registrations)} event registrations")
     return registrations
+
+
+def create_weekly_schedules(db, rooms, users_by_role):
+    """Create realistic weekly class schedules for all rooms"""
+    print("📅 Creating weekly class schedules...")
+
+    admin = users_by_role['admin'][0]
+    schedules_created = 0
+
+    # Define class schedule templates (realistic university schedule)
+    # Format: (room_name, day_of_week, start_time, end_time, class_name)
+    # day_of_week: 0=Monday, 1=Tuesday, 2=Wednesday, 3=Thursday, 4=Friday, 5=Saturday, 6=Sunday
+
+    schedules_data = [
+        # D101 - Small Classroom (20 capacity) - Heavy schedule
+        ("D101 - Small Classroom", 0, time(9, 0), time(11, 0), "Calculus I", BlockType.CLASS),
+        ("D101 - Small Classroom", 0, time(14, 0), time(16, 0), "Linear Algebra", BlockType.CLASS),
+        ("D101 - Small Classroom", 1, time(10, 0), time(12, 0), "Physics I", BlockType.CLASS),
+        ("D101 - Small Classroom", 1, time(14, 0), time(17, 0), "Engineering Mathematics", BlockType.CLASS),
+        ("D101 - Small Classroom", 2, time(9, 0), time(11, 0), "Calculus I", BlockType.CLASS),
+        ("D101 - Small Classroom", 3, time(13, 0), time(15, 0), "Statistics", BlockType.CLASS),
+        ("D101 - Small Classroom", 4, time(9, 0), time(12, 0), "Differential Equations", BlockType.CLASS),
+
+        # D102 - Study Room (15 capacity) - Light schedule, some empty slots
+        ("D102 - Study Room", 0, time(13, 0), time(15, 0), "French Literature", BlockType.CLASS),
+        ("D102 - Study Room", 2, time(10, 0), time(12, 0), "Advanced French", BlockType.CLASS),
+        ("D102 - Study Room", 3, time(14, 0), time(16, 0), "Business French", BlockType.CLASS),
+        ("D102 - Study Room", 4, time(18, 0), time(20, 0), "Graduate Seminar - Linguistics", BlockType.CLASS),
+
+        # D103 - Meeting Room (10 capacity) - Very light, mostly empty
+        ("D103 - Meeting Room", 1, time(16, 0), time(18, 0), "Tutorial Session", BlockType.CLASS),
+        ("D103 - Meeting Room", 3, time(9, 0), time(11, 0), "Office Hours - Prof. Smith", BlockType.RESERVED),
+
+        # D201 - Medium Classroom (50 capacity) - Moderate schedule
+        ("D201 - Medium Classroom", 0, time(9, 0), time(11, 0), "Introduction to Programming", BlockType.CLASS),
+        ("D201 - Medium Classroom", 0, time(14, 0), time(16, 0), "Data Structures", BlockType.CLASS),
+        ("D201 - Medium Classroom", 1, time(10, 0), time(12, 0), "Algorithms", BlockType.CLASS),
+        ("D201 - Medium Classroom", 2, time(9, 0), time(11, 0), "Introduction to Programming", BlockType.CLASS),
+        ("D201 - Medium Classroom", 2, time(14, 0), time(17, 0), "Software Engineering", BlockType.CLASS),
+        ("D201 - Medium Classroom", 3, time(10, 0), time(12, 0), "Database Systems", BlockType.CLASS),
+        ("D201 - Medium Classroom", 4, time(9, 0), time(11, 0), "Operating Systems", BlockType.CLASS),
+        ("D201 - Medium Classroom", 4, time(18, 0), time(20, 0), "Graduate - Machine Learning", BlockType.CLASS),
+
+        # D202 - Computer Lab (40 capacity)
+        ("D202 - Computer Lab", 0, time(10, 0), time(13, 0), "Programming Lab", BlockType.CLASS),
+        ("D202 - Computer Lab", 1, time(9, 0), time(12, 0), "Web Development Lab", BlockType.CLASS),
+        ("D202 - Computer Lab", 2, time(13, 0), time(16, 0), "Database Lab", BlockType.CLASS),
+        ("D202 - Computer Lab", 3, time(10, 0), time(13, 0), "Mobile App Development", BlockType.CLASS),
+        ("D202 - Computer Lab", 4, time(14, 0), time(17, 0), "Network Security Lab", BlockType.CLASS),
+
+        # D203 - Workshop Room (35 capacity)
+        ("D203 - Workshop Room", 0, time(14, 0), time(17, 0), "Electronics Workshop", BlockType.CLASS),
+        ("D203 - Workshop Room", 1, time(13, 0), time(16, 0), "Circuit Design", BlockType.CLASS),
+        ("D203 - Workshop Room", 2, time(9, 0), time(12, 0), "Robotics Lab", BlockType.CLASS),
+        ("D203 - Workshop Room", 4, time(10, 0), time(13, 0), "Embedded Systems", BlockType.CLASS),
+
+        # Main Hall (250 capacity) - Large lectures, some empty slots
+        ("Main Hall", 0, time(10, 0), time(12, 0), "Introduction to Business", BlockType.CLASS),
+        ("Main Hall", 1, time(9, 0), time(11, 0), "Economics 101", BlockType.CLASS),
+        ("Main Hall", 2, time(14, 0), time(16, 0), "Psychology 101", BlockType.CLASS),
+        ("Main Hall", 3, time(10, 0), time(12, 0), "Sociology Fundamentals", BlockType.CLASS),
+
+        # Conference Hall (150 capacity) - Moderate schedule
+        ("Conference Hall", 0, time(13, 0), time(15, 0), "Law and Ethics", BlockType.CLASS),
+        ("Conference Hall", 1, time(14, 0), time(16, 0), "International Relations", BlockType.CLASS),
+        ("Conference Hall", 2, time(10, 0), time(12, 0), "Political Science", BlockType.CLASS),
+        ("Conference Hall", 3, time(13, 0), time(15, 0), "Public Policy", BlockType.CLASS),
+        ("Conference Hall", 3, time(18, 0), time(20, 0), "Graduate - Policy Analysis", BlockType.CLASS),
+        ("Conference Hall", 4, time(9, 0), time(11, 0), "Constitutional Law", BlockType.CLASS),
+
+        # Auditorium A (300 capacity) - Very light, special lectures
+        ("Auditorium A", 0, time(16, 0), time(18, 0), "Guest Lecture Series", BlockType.CLASS),
+        ("Auditorium A", 2, time(18, 0), time(20, 0), "Graduate - Research Methods", BlockType.CLASS),
+
+        # Sports Hall (500 capacity) - Mostly empty, PE classes
+        ("Sports Hall", 1, time(10, 0), time(12, 0), "Physical Education", BlockType.CLASS),
+        ("Sports Hall", 3, time(14, 0), time(16, 0), "Sports Activities", BlockType.CLASS),
+        ("Sports Hall", 4, time(10, 0), time(12, 0), "Physical Education", BlockType.CLASS),
+    ]
+
+    for room_name, day_of_week, start_time, end_time, title, block_type in schedules_data:
+        # Find room by name
+        room = rooms.get(room_name)
+        if not room:
+            print(f"   ⚠️  Warning: Room '{room_name}' not found, skipping...")
+            continue
+
+        # Create schedule block
+        schedule = RoomSchedule(
+            room_id=room.id,
+            title=title,
+            description=f"Regular class - {title}",
+            block_type=block_type,
+            start_time=start_time,
+            end_time=end_time,
+            is_recurring=True,
+            day_of_week=day_of_week,
+            created_by=admin.id
+        )
+        db.add(schedule)
+        schedules_created += 1
+
+    db.commit()
+
+    print(f"   ✅ Created {schedules_created} recurring class schedules")
+    print(f"      📊 Coverage:")
+    print(f"         - Small rooms (D101-D103): Heavy to light schedules")
+    print(f"         - Medium rooms (D201-D203): Moderate schedules with labs")
+    print(f"         - Large halls: Light schedules, special lectures")
+    print(f"         - Sports Hall: PE classes only")
+    print(f"      ⏰ Time slots: 09:00-20:00 (including graduate classes 18:00-20:00)")
+    print(f"      🗓️  Days: Monday-Friday (weekends free for events)")
+
+    return schedules_created
 
 
 def create_notifications(db, users_by_role, events):
@@ -780,6 +908,7 @@ def create_test_data():
         db.query(EventRegistration).delete()
         db.query(Notification).delete()
         db.query(ClubJoinRequest).delete()
+        db.query(RoomSchedule).delete()  # Clean schedules before events (FK dependency)
         db.query(Event).delete()
         db.query(Room).delete()
         db.query(Club).delete()
@@ -795,6 +924,7 @@ def create_test_data():
         clubs, clubs_list = create_clubs(db, users_by_role)
         create_club_memberships(db, clubs_list, users_by_role)
         create_follows(db, clubs_list, users_by_role)
+        create_weekly_schedules(db, rooms, users_by_role)  # Create weekly class schedules BEFORE events
         events = create_events(db, clubs_list, rooms, users_by_role)
         create_registrations(db, events, users_by_role)
         create_notifications(db, users_by_role, events)

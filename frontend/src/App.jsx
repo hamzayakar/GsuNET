@@ -22,6 +22,8 @@ import ClubManagement from './pages/ClubManagement';
 import EventDetail from './pages/EventDetail';
 import AdminPanel from './pages/AdminPanel';
 import AdminClubManagement from './pages/AdminClubManagement';
+import ScheduleManagement from './pages/ScheduleManagement';
+import RoomManagement from './pages/RoomManagement';
 
 function App() {
   return (
@@ -155,6 +157,22 @@ function App() {
                 element={
                   <ProtectedRoute roles={['admin']}>
                     <AdminClubManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/schedule"
+                element={
+                  <ProtectedRoute roles={['admin']}>
+                    <ScheduleManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/rooms"
+                element={
+                  <ProtectedRoute roles={['admin']}>
+                    <RoomManagement />
                   </ProtectedRoute>
                 }
               />

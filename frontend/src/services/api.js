@@ -233,6 +233,18 @@ export const roomsAPI = {
     return response.data;
   },
 
+  recommendEnhanced: async (capacity, eventDate, startTime, duration) => {
+    const response = await api.get('/rooms/recommend', {
+      params: {
+        capacity,
+        event_date: eventDate,
+        start_time: startTime,
+        duration,
+      },
+    });
+    return response.data;
+  },
+
   create: async (roomData) => {
     const response = await api.post('/rooms', roomData);
     return response.data;

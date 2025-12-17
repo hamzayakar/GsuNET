@@ -24,6 +24,7 @@ class Room(Base):
 
     # Relationships
     events = relationship("Event", back_populates="room")
+    schedules = relationship("RoomSchedule", back_populates="room", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Room {self.name} (capacity: {self.capacity})>"

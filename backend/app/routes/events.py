@@ -8,7 +8,7 @@ from datetime import datetime, timezone, timedelta
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_active_user, require_role
-from app.models import Event, User, UserRole, EventStatus, Notification, NotificationType, EventRegistration
+from app.models import Event, User, UserRole, EventStatus, Notification, NotificationType, EventRegistration, RoomSchedule, BlockType
 from app.schemas import EventCreate, EventUpdate, EventResponse, EventApproval
 
 router = APIRouter(prefix="/events", tags=["Events"])
@@ -16,17 +16,17 @@ router = APIRouter(prefix="/events", tags=["Events"])
 
 def auto_complete_past_events(db: Session):
     """
-    Automatically mark approved events as completed if their event_datetime has passed
+    Automatically mark approved events as completed if their end_time has passed
 
     Args:
         db: Database session
     """
     now = datetime.now(timezone.utc)
 
-    # Find all approved events where event_datetime has passed
+    # Find all approved events where end_time has passed (event has finished)
     past_events = db.query(Event).filter(
         Event.status == EventStatus.APPROVED,
-        Event.event_datetime < now
+        Event.end_time < now
     ).all()
 
     # Mark them as completed
@@ -125,8 +125,14 @@ async def create_event(
             )
 
     # Create new event with pending status
+    event_dict = event_data.dict()
+
+    # Calculate end_time from event_datetime + duration
+    end_time = event_dict['event_datetime'] + timedelta(minutes=event_dict['duration'])
+
     new_event = Event(
-        **event_data.dict(),
+        **event_dict,
+        end_time=end_time,
         status=EventStatus.PENDING
     )
 
@@ -256,7 +262,30 @@ async def update_event(
             )
 
     # Update event fields
-    for field, value in event_data.dict(exclude_unset=True).items():
+    update_data = event_data.dict(exclude_unset=True)
+
+    # Track if critical fields (date/time/room) are being updated
+    is_critical_update = any(k in update_data for k in ['event_datetime', 'duration', 'room_id'])
+
+    # If event_datetime or duration is being updated, recalculate end_time
+    if 'event_datetime' in update_data or 'duration' in update_data:
+        new_event_datetime = update_data.get('event_datetime', event.event_datetime)
+        new_duration = update_data.get('duration', event.duration)
+        update_data['end_time'] = new_event_datetime + timedelta(minutes=new_duration)
+
+    # LIFECYCLE HOOK: If approved event's critical fields are updated, reset to PENDING
+    if event.status == EventStatus.APPROVED and is_critical_update:
+        # Remove from schedule (will be re-added on re-approval)
+        db.query(RoomSchedule).filter(
+            RoomSchedule.event_id == event.id
+        ).delete()
+
+        # Reset status to pending (requires re-approval)
+        update_data['status'] = EventStatus.PENDING
+        update_data['approved_by_id'] = None
+        update_data['rejection_reason'] = None
+
+    for field, value in update_data.items():
         setattr(event, field, value)
 
     db.commit()
@@ -295,6 +324,9 @@ async def approve_event(
             detail="Event not found"
         )
 
+    # Store previous status for lifecycle hooks
+    previous_status = event.status
+
     # Update event status and approver
     event.status = approval_data.status
     event.approved_by_id = current_user.id
@@ -302,6 +334,36 @@ async def approve_event(
     # Add rejection reason if provided
     if approval_data.rejection_reason:
         event.rejection_reason = approval_data.rejection_reason
+
+    # LIFECYCLE HOOK: Add to room schedule when approved
+    if approval_data.status == EventStatus.APPROVED and event.room_id:
+        # Check if schedule block already exists (shouldn't happen but defensive)
+        existing_block = db.query(RoomSchedule).filter(
+            RoomSchedule.event_id == event.id
+        ).first()
+
+        if not existing_block:
+            # Create room schedule block for approved event
+            schedule_block = RoomSchedule(
+                room_id=event.room_id,
+                title=event.title,
+                description=event.description,
+                block_type=BlockType.EVENT,
+                start_time=event.event_datetime.time(),
+                end_time=event.end_time.time(),
+                is_recurring=False,
+                specific_date=event.event_datetime.date(),
+                event_id=event.id,
+                created_by=current_user.id
+            )
+            db.add(schedule_block)
+
+    # LIFECYCLE HOOK: Remove from room schedule when rejected
+    elif approval_data.status == EventStatus.REJECTED:
+        # Remove schedule block if it exists (cleanup)
+        db.query(RoomSchedule).filter(
+            RoomSchedule.event_id == event.id
+        ).delete()
 
     db.commit()
     db.refresh(event)
@@ -371,6 +433,11 @@ async def cancel_event(
             read=False
         )
         db.add(notification)
+
+    # LIFECYCLE HOOK: Remove from room schedule when cancelled
+    db.query(RoomSchedule).filter(
+        RoomSchedule.event_id == event.id
+    ).delete()
 
     db.commit()
     db.refresh(event)

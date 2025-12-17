@@ -3,12 +3,14 @@ Room management routes with smart recommendation system
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List
+from sqlalchemy import and_, or_
+from typing import List, Optional, Union
+from datetime import date, time, datetime, timedelta
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_active_user, require_role
-from app.models import Room, User, UserRole
-from app.schemas import RoomCreate, RoomUpdate, RoomResponse, RoomRecommendationQuery
+from app.models import Room, User, UserRole, RoomSchedule
+from app.schemas import RoomCreate, RoomUpdate, RoomResponse, RoomRecommendationQuery, RoomRecommendationResponse, RoomConflict
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
@@ -72,27 +74,35 @@ async def list_rooms(
     return rooms
 
 
-@router.get("/recommend", response_model=List[RoomResponse])
+@router.get("/recommend", response_model=Union[List[RoomResponse], RoomRecommendationResponse])
 async def recommend_rooms(
     capacity: int = Query(..., description="Required capacity for the event"),
+    event_date: Optional[date] = Query(None, description="Event date for conflict checking"),
+    start_time: Optional[time] = Query(None, description="Event start time"),
+    duration: Optional[int] = Query(None, ge=30, le=360, description="Event duration in minutes (30-360)"),
     db: Session = Depends(get_db)
 ):
     """
-    Smart room recommendation based on required capacity
+    Smart room recommendation with optional conflict checking
 
-    This endpoint filters rooms that have sufficient capacity for the given requirement.
-    Rooms are returned sorted by capacity (smallest suitable room first for efficiency).
+    **Basic Mode** (capacity only):
+    - GET /api/v1/rooms/recommend?capacity=100
+    - Returns list of rooms with capacity >= 100
+
+    **Enhanced Mode** (conflict-aware):
+    - GET /api/v1/rooms/recommend?capacity=100&event_date=2025-12-20&start_time=14:00&duration=120
+    - Returns rooms without conflicts + conflict information for unavailable rooms
 
     Args:
         capacity: Required capacity for the event
+        event_date: Optional - Event date for conflict checking
+        start_time: Optional - Event start time
+        duration: Optional - Event duration in minutes
         db: Database session
 
     Returns:
-        List of suitable rooms sorted by capacity
-
-    Example:
-        GET /api/v1/rooms/recommend?capacity=100
-        Returns all rooms with capacity >= 100, sorted by capacity
+        List[RoomResponse] if only capacity provided (backward compatible)
+        RoomRecommendationResponse if date/time provided (conflict-aware)
     """
     if capacity <= 0:
         raise HTTPException(
@@ -100,19 +110,142 @@ async def recommend_rooms(
             detail="Capacity must be greater than 0"
         )
 
-    # Query rooms with sufficient capacity and available status
+    # Get all rooms with sufficient capacity
     suitable_rooms = db.query(Room).filter(
         Room.capacity >= capacity,
         Room.is_available == True
     ).order_by(Room.capacity).all()
 
-    if not suitable_rooms:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No available rooms found with capacity >= {capacity}"
-        )
+    # BASIC MODE: If no date/time provided, return old behavior (backward compatible)
+    if not event_date or not start_time or not duration:
+        if not suitable_rooms:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No available rooms found with capacity >= {capacity}"
+            )
+        return suitable_rooms
 
-    return suitable_rooms
+    # ENHANCED MODE: Conflict-aware recommendation
+    # Calculate end time
+    # Convert time to datetime for calculation
+    dummy_datetime = datetime.combine(event_date, start_time)
+    end_datetime = dummy_datetime + timedelta(minutes=duration)
+    end_time = end_datetime.time()
+
+    # Get day of week (0=Monday, 6=Sunday)
+    day_of_week = event_date.weekday()
+
+    available_rooms = []
+    conflicted_rooms = []
+    conflicts = []
+
+    for room in suitable_rooms:
+        # Check for conflicts in this room's schedule
+        has_conflict = False
+
+        # Check recurring blocks (weekly classes)
+        recurring_conflicts = db.query(RoomSchedule).filter(
+            and_(
+                RoomSchedule.room_id == room.id,
+                RoomSchedule.is_recurring == True,
+                RoomSchedule.day_of_week == day_of_week,
+                or_(
+                    # Event starts during existing block
+                    and_(
+                        RoomSchedule.start_time <= start_time,
+                        RoomSchedule.end_time > start_time
+                    ),
+                    # Event ends during existing block
+                    and_(
+                        RoomSchedule.start_time < end_time,
+                        RoomSchedule.end_time >= end_time
+                    ),
+                    # Event completely contains existing block
+                    and_(
+                        RoomSchedule.start_time >= start_time,
+                        RoomSchedule.end_time <= end_time
+                    )
+                )
+            )
+        ).all()
+
+        if recurring_conflicts:
+            has_conflict = True
+            for conflict in recurring_conflicts:
+                conflicts.append(RoomConflict(
+                    room_id=room.id,
+                    room_name=room.name,
+                    conflict_type=conflict.block_type.value.upper(),
+                    conflict_title=conflict.title,
+                    time_range=f"{conflict.start_time.strftime('%H:%M')}-{conflict.end_time.strftime('%H:%M')}",
+                    is_recurring=True,
+                    specific_date=None
+                ))
+
+        # Check one-time event blocks (specific date)
+        event_conflicts = db.query(RoomSchedule).filter(
+            and_(
+                RoomSchedule.room_id == room.id,
+                RoomSchedule.is_recurring == False,
+                RoomSchedule.specific_date == event_date,
+                or_(
+                    and_(
+                        RoomSchedule.start_time <= start_time,
+                        RoomSchedule.end_time > start_time
+                    ),
+                    and_(
+                        RoomSchedule.start_time < end_time,
+                        RoomSchedule.end_time >= end_time
+                    ),
+                    and_(
+                        RoomSchedule.start_time >= start_time,
+                        RoomSchedule.end_time <= end_time
+                    )
+                )
+            )
+        ).all()
+
+        if event_conflicts:
+            has_conflict = True
+            for conflict in event_conflicts:
+                conflicts.append(RoomConflict(
+                    room_id=room.id,
+                    room_name=room.name,
+                    conflict_type=conflict.block_type.value.upper(),
+                    conflict_title=conflict.title,
+                    time_range=f"{conflict.start_time.strftime('%H:%M')}-{conflict.end_time.strftime('%H:%M')}",
+                    is_recurring=False,
+                    specific_date=event_date
+                ))
+
+        if has_conflict:
+            conflicted_rooms.append({
+                "id": room.id,
+                "name": room.name,
+                "capacity": room.capacity,
+                "location": room.location,
+                "description": room.description,
+                "features": room.features,
+                "is_available": room.is_available
+            })
+        else:
+            available_rooms.append(room)
+
+    # Build response message
+    if available_rooms:
+        message = f"{len(available_rooms)} conflict-free room(s) found"
+    elif conflicted_rooms:
+        message = f"No conflict-free rooms available. {len(conflicted_rooms)} room(s) with conflicts (may be overridden by admin/advisor)"
+    else:
+        message = f"No rooms found with capacity >= {capacity}"
+
+    return RoomRecommendationResponse(
+        available_rooms=available_rooms,
+        conflicted_rooms=conflicted_rooms if conflicted_rooms else None,
+        conflicts=conflicts if conflicts else None,
+        has_conflicts=len(conflicts) > 0,
+        message=message
+    )
 
 
 @router.get("/{room_id}", response_model=RoomResponse)

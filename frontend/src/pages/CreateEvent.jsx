@@ -11,6 +11,8 @@ const CreateEvent = () => {
 
   const [clubs, setClubs] = useState([]);
   const [recommendedRooms, setRecommendedRooms] = useState([]);
+  const [conflicts, setConflicts] = useState([]);
+  const [conflictMessage, setConflictMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,6 +20,7 @@ const CreateEvent = () => {
     title: '',
     description: '',
     event_datetime: '',
+    duration: '120', // Default 2 hours (120 minutes)
     expected_capacity: '',
     max_capacity: '',
     club_id: '',
@@ -53,26 +56,58 @@ const CreateEvent = () => {
     fetchClubs();
   }, [user]);
 
-  // Fetch room recommendations when expected capacity changes
+  // Fetch room recommendations when capacity, date, or duration changes
   useEffect(() => {
     const fetchRoomRecommendations = async () => {
-      if (formData.expected_capacity && parseInt(formData.expected_capacity) > 0) {
-        try {
+      // Reset recommendations and conflicts
+      setRecommendedRooms([]);
+      setConflicts([]);
+      setConflictMessage('');
+
+      if (!formData.expected_capacity || parseInt(formData.expected_capacity) <= 0) {
+        return;
+      }
+
+      try {
+        // If date and duration are provided, use enhanced recommendation (conflict-aware)
+        if (formData.event_datetime && formData.duration) {
+          const datetime = new Date(formData.event_datetime);
+          const eventDate = datetime.toISOString().split('T')[0]; // YYYY-MM-DD
+          const eventTime = datetime.toTimeString().slice(0, 5); // HH:MM
+
+          const response = await roomsAPI.recommendEnhanced(
+            parseInt(formData.expected_capacity),
+            eventDate,
+            eventTime,
+            parseInt(formData.duration)
+          );
+
+          // Enhanced response has different structure
+          if (response.available_rooms) {
+            setRecommendedRooms(response.available_rooms);
+            setConflicts(response.conflicts || []);
+            setConflictMessage(response.message || '');
+          } else {
+            // Fallback to basic recommendation if enhanced fails
+            const rooms = await roomsAPI.recommend(parseInt(formData.expected_capacity));
+            setRecommendedRooms(Array.isArray(rooms) ? rooms : []);
+          }
+        } else {
+          // Basic recommendation (capacity only - backward compatible)
           const rooms = await roomsAPI.recommend(parseInt(formData.expected_capacity));
-          setRecommendedRooms(rooms);
-        } catch (err) {
-          console.error('Failed to fetch room recommendations:', err);
-          setRecommendedRooms([]);
+          setRecommendedRooms(Array.isArray(rooms) ? rooms : []);
         }
-      } else {
+      } catch (err) {
+        console.error('Failed to fetch room recommendations:', err);
         setRecommendedRooms([]);
+        setConflicts([]);
       }
     };
 
     // Debounce the API call
     const timeoutId = setTimeout(fetchRoomRecommendations, 500);
     return () => clearTimeout(timeoutId);
-  }, [formData.expected_capacity]);
+  }, [formData.expected_capacity, formData.event_datetime, formData.duration]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -104,6 +139,7 @@ const CreateEvent = () => {
         title: formData.title,
         description: formData.description,
         event_datetime: new Date(formData.event_datetime).toISOString(),
+        duration: parseInt(formData.duration),
         expected_capacity: parseInt(formData.expected_capacity),
         max_capacity: parseInt(formData.max_capacity),
         club_id: parseInt(formData.club_id),
@@ -190,6 +226,34 @@ const CreateEvent = () => {
               />
             </div>
 
+            {/* Duration */}
+            <div>
+              <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
+                Duration (minutes) *
+              </label>
+              <select
+                id="duration"
+                name="duration"
+                required
+                value={formData.duration}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              >
+                <option value="30">30 minutes</option>
+                <option value="60">1 hour</option>
+                <option value="90">1.5 hours</option>
+                <option value="120">2 hours</option>
+                <option value="150">2.5 hours</option>
+                <option value="180">3 hours</option>
+                <option value="240">4 hours</option>
+                <option value="300">5 hours</option>
+                <option value="360">6 hours</option>
+              </select>
+              <p className="mt-1 text-sm text-gray-500">
+                Select how long your event will last (30 min - 6 hours)
+              </p>
+            </div>
+
             {/* Club Selection */}
             <div>
               <label htmlFor="club_id" className="block text-sm font-medium text-gray-700 mb-2">
@@ -253,11 +317,33 @@ const CreateEvent = () => {
               />
             </div>
 
+            {/* Conflict Warning */}
+            {conflicts.length > 0 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                  ⚠️ Schedule Conflicts Detected
+                </h3>
+                <p className="text-sm text-yellow-700 mb-2">{conflictMessage}</p>
+                <ul className="text-sm text-yellow-700 space-y-1">
+                  {conflicts.slice(0, 3).map((conflict, idx) => (
+                    <li key={idx}>
+                      • <strong>{conflict.room_name}</strong>: {conflict.conflict_title} ({conflict.time_range})
+                      {conflict.is_recurring && <span className="ml-1 text-xs">(Weekly class)</span>}
+                    </li>
+                  ))}
+                  {conflicts.length > 3 && (
+                    <li className="text-xs italic">...and {conflicts.length - 3} more conflicts</li>
+                  )}
+                </ul>
+              </div>
+            )}
+
             {/* Room Selection (with recommendations) */}
             {recommendedRooms.length > 0 && (
               <div>
                 <label htmlFor="room_id" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('recommendedRooms')}
+                  {conflicts.length > 0 && <span className="ml-2 text-green-600 text-xs">✓ Conflict-free</span>}
                 </label>
                 <select
                   id="room_id"
@@ -275,6 +361,15 @@ const CreateEvent = () => {
                 </select>
                 <p className="mt-1 text-sm text-gray-500">
                   {t('theseRoomsRecommended')}
+                </p>
+              </div>
+            )}
+
+            {/* No available rooms message */}
+            {formData.event_datetime && formData.duration && formData.expected_capacity && recommendedRooms.length === 0 && conflicts.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                <p className="text-sm text-red-700">
+                  No conflict-free rooms available for the selected time. Please choose a different time or contact an advisor for approval.
                 </p>
               </div>
             )}

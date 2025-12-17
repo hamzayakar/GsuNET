@@ -9,6 +9,7 @@ const Navbar = () => {
   const { t, language, changeLanguage } = useLanguage();
   const navigate = useNavigate();
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -71,20 +72,48 @@ const Navbar = () => {
                     </Link>
                   )}
                   {user?.role === 'admin' && (
-                    <>
-                      <Link
-                        to="/admin"
-                        className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowAdminMenu(!showAdminMenu)}
+                        className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium flex items-center"
                       >
-                        {t('adminPanel') || 'Admin Panel'}
-                      </Link>
-                      <Link
-                        to="/admin/clubs"
-                        className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                      >
-                        {t('clubs')}
-                      </Link>
-                    </>
+                        Admin ▾
+                      </button>
+                      {showAdminMenu && (
+                        <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                          <div className="py-1">
+                            <Link
+                              to="/admin"
+                              onClick={() => setShowAdminMenu(false)}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              User Management
+                            </Link>
+                            <Link
+                              to="/admin/clubs"
+                              onClick={() => setShowAdminMenu(false)}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              Club Management
+                            </Link>
+                            <Link
+                              to="/admin/schedule"
+                              onClick={() => setShowAdminMenu(false)}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              Schedule
+                            </Link>
+                            <Link
+                              to="/admin/rooms"
+                              onClick={() => setShowAdminMenu(false)}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              Rooms
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -161,11 +190,17 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Click outside to close language menu */}
+      {/* Click outside to close menus */}
       {showLangMenu && (
         <div
           className="fixed inset-0 z-40"
           onClick={() => setShowLangMenu(false)}
+        ></div>
+      )}
+      {showAdminMenu && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowAdminMenu(false)}
         ></div>
       )}
 
@@ -228,15 +263,15 @@ const Navbar = () => {
             )}
 
             {user?.role === 'admin' && (
-              <Link
-                to="/admin"
+              <button
+                onClick={() => navigate('/admin')}
                 className="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
                 <span className="text-xs mt-1">Admin</span>
-              </Link>
+              </button>
             )}
 
             <button
