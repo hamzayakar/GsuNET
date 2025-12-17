@@ -19,7 +19,7 @@ const EventCard = ({ event }) => {
       pending: 'bg-yellow-100 text-yellow-800',
       approved: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800',
-      cancelled: 'bg-gray-100 text-gray-800',
+      cancelled: 'bg-orange-100 text-orange-800',
       completed: 'bg-blue-100 text-blue-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
@@ -38,10 +38,17 @@ const EventCard = ({ event }) => {
       )}
 
       <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(event.status)}`}>
-            {event.status}
-          </span>
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(event.status)}`}>
+              {t(event.status)}
+            </span>
+            {event.members_only && (
+              <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                {t('membersOnly')}
+              </span>
+            )}
+          </div>
           {event.club && (
             <Link
               to={`/club/${event.club.id}`}

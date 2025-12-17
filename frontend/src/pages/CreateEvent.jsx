@@ -23,7 +23,7 @@ const CreateEvent = () => {
     club_id: '',
     room_id: '',
     location: '',
-    image_url: '',
+    members_only: false,
   });
 
   // Fetch clubs on component mount
@@ -109,7 +109,7 @@ const CreateEvent = () => {
         club_id: parseInt(formData.club_id),
         room_id: formData.room_id ? parseInt(formData.room_id) : null,
         location: formData.location || null,
-        image_url: formData.image_url || null,
+        members_only: formData.members_only,
       };
 
       await eventsAPI.create(eventData);
@@ -295,20 +295,24 @@ const CreateEvent = () => {
               />
             </div>
 
-            {/* Image URL (Optional) */}
-            <div>
-              <label htmlFor="image_url" className="block text-sm font-medium text-gray-700 mb-2">
-                {t('imageUrl')}
-              </label>
-              <input
-                type="url"
-                id="image_url"
-                name="image_url"
-                value={formData.image_url}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                placeholder="https://example.com/image.jpg"
-              />
+            {/* Members Only Checkbox */}
+            <div className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id="members_only"
+                  name="members_only"
+                  type="checkbox"
+                  checked={formData.members_only}
+                  onChange={(e) => setFormData(prev => ({ ...prev, members_only: e.target.checked }))}
+                  className="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 rounded focus:ring-red-500 focus:ring-2"
+                />
+              </div>
+              <div className="ml-3">
+                <label htmlFor="members_only" className="text-sm font-medium text-gray-700">
+                  {t('membersOnly')}
+                </label>
+                <p className="text-sm text-gray-500">{t('membersOnlyHelp')}</p>
+              </div>
             </div>
 
             {/* Submit Button */}

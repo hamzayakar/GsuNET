@@ -36,6 +36,8 @@ class ClubResponse(ClubBase):
     manager_id: Optional[int]
     advisor_id: Optional[int]
     created_at: datetime
+    member_count: int = 0
+    follower_count: int = 0
 
     class Config:
         from_attributes = True

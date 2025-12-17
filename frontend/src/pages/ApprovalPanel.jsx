@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { eventsAPI } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
+import toast from 'react-hot-toast';
 
 const ApprovalPanel = () => {
+  const { t } = useLanguage();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -33,6 +36,10 @@ const ApprovalPanel = () => {
 
     try {
       await eventsAPI.approve(eventId, status, rejectionReason);
+      // Show success toast for approval
+      if (status === 'approved') {
+        toast.success(t('eventApproved'));
+      }
       // Remove the event from the list after approval/rejection/un-rejection
       setEvents(events.filter((event) => event.id !== eventId));
     } catch (err) {
@@ -51,8 +58,10 @@ const ApprovalPanel = () => {
       await eventsAPI.approve(eventId, 'pending', null);
       // Remove from rejected list
       setEvents(events.filter((event) => event.id !== eventId));
+      toast.success(t('eventUnrejected'));
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to un-reject event. Please try again.');
+      toast.error(err.response?.data?.detail || 'Failed to un-reject event');
     } finally {
       setProcessingId(null);
     }
@@ -72,9 +81,9 @@ const ApprovalPanel = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Event Approval Panel</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('eventApprovalPanel')}</h1>
         <p className="mt-2 text-gray-600">
-          Review and manage event approval requests
+          {t('reviewManageRequests')}
         </p>
 
         {/* Filter Buttons */}
@@ -87,7 +96,7 @@ const ApprovalPanel = () => {
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Pending Events
+            {t('pendingEvents')}
           </button>
           <button
             onClick={() => setFilter('rejected')}
@@ -97,7 +106,7 @@ const ApprovalPanel = () => {
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Rejected Events
+            {t('rejectedEvents')}
           </button>
         </div>
       </div>
@@ -128,12 +137,12 @@ const ApprovalPanel = () => {
             />
           </svg>
           <h3 className="mt-2 text-sm font-medium text-gray-900">
-            {filter === 'pending' ? 'No pending events' : 'No rejected events'}
+            {filter === 'pending' ? t('noPendingEvents') : t('noRejectedEvents')}
           </h3>
           <p className="mt-1 text-sm text-gray-500">
             {filter === 'pending'
-              ? 'All events have been reviewed.'
-              : 'No events have been rejected.'}
+              ? t('noEventsPending')
+              : t('noEventsRejected')}
           </p>
         </div>
       ) : (
@@ -155,7 +164,7 @@ const ApprovalPanel = () => {
                           ? 'bg-yellow-100 text-yellow-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {filter === 'pending' ? 'Pending' : 'Rejected'}
+                        {filter === 'pending' ? t('pending') : t('rejected')}
                       </span>
                     </div>
 
@@ -179,7 +188,7 @@ const ApprovalPanel = () => {
                               d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                             />
                           </svg>
-                          <span className="font-medium">Club:</span>
+                          <span className="font-medium">{t('club')}:</span>
                           <span className="ml-1">{event.club.name}</span>
                         </div>
                       )}
@@ -198,7 +207,7 @@ const ApprovalPanel = () => {
                             d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                           />
                         </svg>
-                        <span className="font-medium">Date:</span>
+                        <span className="font-medium">{t('date')}:</span>
                         <span className="ml-1">{formatDate(event.event_datetime)}</span>
                       </div>
 
@@ -217,9 +226,9 @@ const ApprovalPanel = () => {
                               d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
                             />
                           </svg>
-                          <span className="font-medium">Room:</span>
+                          <span className="font-medium">{t('room')}:</span>
                           <span className="ml-1">
-                            {event.room.name} (Capacity: {event.room.capacity})
+                            {event.room.name} ({t('capacity')}: {event.room.capacity})
                           </span>
                         </div>
                       )}
@@ -239,7 +248,7 @@ const ApprovalPanel = () => {
                               d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
                             />
                           </svg>
-                          <span className="font-medium">Expected Attendees:</span>
+                          <span className="font-medium">{t('expectedAttendees')}:</span>
                           <span className="ml-1">{event.expected_attendees}</span>
                         </div>
                       )}
@@ -253,15 +262,15 @@ const ApprovalPanel = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div className="flex-1">
-                            <h4 className="text-sm font-semibold text-red-900">Rejection Reason:</h4>
+                            <h4 className="text-sm font-semibold text-red-900">{t('rejectionInfo')}</h4>
                             <p className="text-sm text-red-700 mt-1">
-                              {event.rejection_reason || 'No reason provided'}
+                              {event.rejection_reason || t('noReasonProvided')}
                             </p>
                           </div>
                         </div>
                         {event.updated_at && (
                           <p className="text-xs text-red-600 mt-2">
-                            <span className="font-medium">Rejected on:</span> {formatDate(event.updated_at)}
+                            <span className="font-medium">{t('rejectedOn')}</span> {formatDate(event.updated_at)}
                           </p>
                         )}
                       </div>
@@ -278,22 +287,21 @@ const ApprovalPanel = () => {
                         disabled={processingId === event.id}
                         className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        {processingId === event.id ? 'Processing...' : 'Approve'}
+                        {processingId === event.id ? t('processing') : t('approve')}
                       </button>
 
                       <button
                         onClick={() => {
-                          const reason = prompt(
-                            'Please provide a reason for rejection (optional):'
-                          );
+                          const reason = prompt(t('enterRejectionReason'));
                           if (reason !== null) {
                             handleApproval(event.id, 'rejected', reason || null);
+                            toast.success('Event rejected');
                           }
                         }}
                         disabled={processingId === event.id}
                         className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        Reject
+                        {t('reject')}
                       </button>
                     </>
                   ) : (
@@ -302,7 +310,7 @@ const ApprovalPanel = () => {
                       disabled={processingId === event.id}
                       className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {processingId === event.id ? 'Processing...' : 'Un-reject (Return to Pending)'}
+                      {processingId === event.id ? t('processing') : t('returnToPending')}
                     </button>
                   )}
                 </div>

@@ -42,6 +42,13 @@ async def create_join_request(
             detail="Club not found"
         )
 
+    # Check if user is manager or advisor of this club
+    if club.manager_id == current_user.id or club.advisor_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You cannot request to join a club you manage or advise"
+        )
+
     # Check if user already has a pending request for this club
     existing_request = db.query(ClubJoinRequest).filter(
         ClubJoinRequest.user_id == current_user.id,
@@ -67,24 +74,39 @@ async def create_join_request(
     db.commit()
     db.refresh(join_request)
 
-    # Create notification for club managers
-    for manager in club.managers:
+    # Create notification for club manager and advisor
+    notified_users = []
+    if club.manager_id:
+        notified_users.append(club.manager_id)
+    if club.advisor_id and club.advisor_id not in notified_users:
+        notified_users.append(club.advisor_id)
+
+    for user_id in notified_users:
         notification = Notification(
             title=f"New Join Request for {club.name}",
             message=f"{current_user.full_name} has requested to join {club.name}. Review the request in the club management panel.",
             notification_type=NotificationType.CLUB_UPDATE,
-            user_id=manager.id,
+            user_id=user_id,
             read=False
         )
         db.add(notification)
 
     db.commit()
+    db.refresh(join_request)
 
-    return {
-        **join_request.__dict__,
-        "user": {"id": current_user.id, "full_name": current_user.full_name, "email": current_user.email},
-        "club": {"id": club.id, "name": club.name}
-    }
+    return ClubJoinRequestResponse(
+        id=join_request.id,
+        user_id=join_request.user_id,
+        club_id=join_request.club_id,
+        message=join_request.message,
+        status=join_request.status,
+        rejection_reason=join_request.rejection_reason,
+        requested_at=join_request.requested_at,
+        reviewed_at=join_request.reviewed_at,
+        reviewed_by_id=join_request.reviewed_by_id,
+        user={"id": current_user.id, "full_name": current_user.full_name, "email": current_user.email},
+        club={"id": club.id, "name": club.name}
+    )
 
 
 @router.get("/my-requests", response_model=List[ClubJoinRequestResponse])
@@ -108,11 +130,19 @@ async def get_my_join_requests(
 
     response_data = []
     for req in requests:
-        response_data.append({
-            **req.__dict__,
-            "user": {"id": req.user.id, "full_name": req.user.full_name, "email": req.user.email},
-            "club": {"id": req.club.id, "name": req.club.name}
-        })
+        response_data.append(ClubJoinRequestResponse(
+            id=req.id,
+            user_id=req.user_id,
+            club_id=req.club_id,
+            message=req.message,
+            status=req.status,
+            rejection_reason=req.rejection_reason,
+            requested_at=req.requested_at,
+            reviewed_at=req.reviewed_at,
+            reviewed_by_id=req.reviewed_by_id,
+            user={"id": req.user.id, "full_name": req.user.full_name, "email": req.user.email},
+            club={"id": req.club.id, "name": req.club.name}
+        ))
 
     return response_data
 
@@ -158,11 +188,19 @@ async def get_club_join_requests(
 
     response_data = []
     for req in requests:
-        response_data.append({
-            **req.__dict__,
-            "user": {"id": req.user.id, "full_name": req.user.full_name, "email": req.user.email},
-            "club": {"id": req.club.id, "name": req.club.name}
-        })
+        response_data.append(ClubJoinRequestResponse(
+            id=req.id,
+            user_id=req.user_id,
+            club_id=req.club_id,
+            message=req.message,
+            status=req.status,
+            rejection_reason=req.rejection_reason,
+            requested_at=req.requested_at,
+            reviewed_at=req.reviewed_at,
+            reviewed_by_id=req.reviewed_by_id,
+            user={"id": req.user.id, "full_name": req.user.full_name, "email": req.user.email},
+            club={"id": req.club.id, "name": req.club.name}
+        ))
 
     return response_data
 
@@ -215,12 +253,8 @@ async def review_join_request(
     if review_data.rejection_reason:
         join_request.rejection_reason = review_data.rejection_reason
 
-    # If approved, add user to club members
-    if review_data.status == JoinRequestStatus.APPROVED:
-        club = db.query(Club).filter(Club.id == join_request.club_id).first()
-        user = db.query(User).filter(User.id == join_request.user_id).first()
-        if club and user and user not in club.members:
-            club.members.append(user)
+    # Note: Member status is tracked via ClubJoinRequest.status (APPROVED)
+    # No need to maintain a separate members relationship
 
     db.commit()
     db.refresh(join_request)
@@ -238,11 +272,19 @@ async def review_join_request(
     db.add(notification)
     db.commit()
 
-    return {
-        **join_request.__dict__,
-        "user": {"id": join_request.user.id, "full_name": join_request.user.full_name, "email": join_request.user.email},
-        "club": {"id": club.id, "name": club.name}
-    }
+    return ClubJoinRequestResponse(
+        id=join_request.id,
+        user_id=join_request.user_id,
+        club_id=join_request.club_id,
+        message=join_request.message,
+        status=join_request.status,
+        rejection_reason=join_request.rejection_reason,
+        requested_at=join_request.requested_at,
+        reviewed_at=join_request.reviewed_at,
+        reviewed_by_id=join_request.reviewed_by_id,
+        user={"id": join_request.user.id, "full_name": join_request.user.full_name, "email": join_request.user.email},
+        club={"id": club.id, "name": club.name}
+    )
 
 
 @router.delete("/{request_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -18,15 +18,17 @@ import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import ApprovalPanel from './pages/ApprovalPanel';
 import CreateEvent from './pages/CreateEvent';
+import ClubManagement from './pages/ClubManagement';
 import EventDetail from './pages/EventDetail';
 import AdminPanel from './pages/AdminPanel';
+import AdminClubManagement from './pages/AdminClubManagement';
 
 function App() {
   return (
     <Router>
       <LanguageProvider>
         <AuthProvider>
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen bg-gray-50 pb-20 md:pb-0">
             <Navbar />
             <Toaster
               position="top-right"
@@ -125,6 +127,14 @@ function App() {
                 }
               />
               <Route
+                path="/club-management"
+                element={
+                  <ProtectedRoute roles={['club_manager', 'advisor']}>
+                    <ClubManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/event/:id"
                 element={
                   <ProtectedRoute>
@@ -137,6 +147,14 @@ function App() {
                 element={
                   <ProtectedRoute roles={['admin']}>
                     <AdminPanel />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/clubs"
+                element={
+                  <ProtectedRoute roles={['admin']}>
+                    <AdminClubManagement />
                   </ProtectedRoute>
                 }
               />

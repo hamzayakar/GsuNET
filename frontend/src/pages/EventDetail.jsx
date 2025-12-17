@@ -16,6 +16,7 @@ const EventDetail = () => {
   const [error, setError] = useState('');
   const [registering, setRegistering] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -53,7 +54,7 @@ const EventDetail = () => {
       setRegistering(true);
       await eventsAPI.register(parseInt(id));
       setIsRegistered(true);
-      toast.success('Successfully registered for the event!');
+      toast.success(t('successfullyRegistered'));
     } catch (err) {
       console.error('Failed to register:', err);
       toast.error(err.response?.data?.detail || 'Failed to register for event');
@@ -67,12 +68,32 @@ const EventDetail = () => {
       setRegistering(true);
       await eventsAPI.unregister(parseInt(id));
       setIsRegistered(false);
-      toast.success('Successfully unregistered from the event');
+      toast.success(t('successfullyUnregistered'));
     } catch (err) {
       console.error('Failed to unregister:', err);
       toast.error(err.response?.data?.detail || 'Failed to unregister from event');
     } finally {
       setRegistering(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!window.confirm(t('confirmCancelEvent'))) {
+      return;
+    }
+
+    try {
+      setCancelling(true);
+      await eventsAPI.cancel(parseInt(id));
+      toast.success(t('eventCancelled'));
+      // Refresh event data
+      const updatedEvent = await eventsAPI.getById(id);
+      setEvent(updatedEvent);
+    } catch (err) {
+      console.error('Failed to cancel event:', err);
+      toast.error(err.response?.data?.detail || 'Failed to cancel event');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -103,7 +124,7 @@ const EventDetail = () => {
           statusColors[status] || 'bg-gray-100 text-gray-800'
         }`}
       >
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {t(status)}
       </span>
     );
   };
@@ -111,7 +132,7 @@ const EventDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading...</div>
+        <div className="text-xl text-gray-600">{t('loading')}</div>
       </div>
     );
   }
@@ -134,6 +155,13 @@ const EventDetail = () => {
 
   const canRegister = event.status === 'approved' && !isRegistered;
 
+  // Check if user can cancel this event
+  const canCancel = event.status === 'approved' && user && (
+    user.role === 'admin' ||
+    (user.role === 'club_manager' && user.managed_clubs?.some(club => club.id === event.club_id)) ||
+    (user.role === 'advisor' && event.club?.advisor_id === user.id)
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -155,8 +183,13 @@ const EventDetail = () => {
             <div className="flex items-start justify-between mb-6">
               <div className="flex-1">
                 <h1 className="text-4xl font-bold text-gray-900 mb-4">{event.title}</h1>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   {getStatusBadge(event.status)}
+                  {event.members_only && (
+                    <span className="px-3 py-1 rounded-full text-sm font-semibold bg-purple-100 text-purple-800">
+                      {t('membersOnly')}
+                    </span>
+                  )}
                   {event.club && (
                     <span className="text-gray-600">
                       by <span className="font-semibold">{event.club.name}</span>
@@ -184,7 +217,7 @@ const EventDetail = () => {
                   />
                 </svg>
                 <div>
-                  <p className="text-sm text-gray-500">Date & Time</p>
+                  <p className="text-sm text-gray-500">{t('dateAndTime')}</p>
                   <p className="text-lg text-gray-900">{formatDate(event.event_datetime)}</p>
                 </div>
               </div>
@@ -212,7 +245,7 @@ const EventDetail = () => {
                     />
                   </svg>
                   <div>
-                    <p className="text-sm text-gray-500">Location</p>
+                    <p className="text-sm text-gray-500">{t('location')}</p>
                     <p className="text-lg text-gray-900">{event.location}</p>
                   </div>
                 </div>
@@ -235,10 +268,10 @@ const EventDetail = () => {
                     />
                   </svg>
                   <div>
-                    <p className="text-sm text-gray-500">Capacity & Registrations</p>
+                    <p className="text-sm text-gray-500">{t('capacityAndRegistrations')}</p>
                     <p className="text-lg text-gray-900">
-                      {event.registration_count || 0} / {event.max_capacity} registered
-                      {event.expected_capacity && ` (Expected: ${event.expected_capacity})`}
+                      {event.registration_count || 0} / {event.max_capacity} {t('registered')}
+                      {event.expected_capacity && ` (${t('expected')}: ${event.expected_capacity})`}
                     </p>
                   </div>
                 </div>
@@ -248,7 +281,7 @@ const EventDetail = () => {
             {/* Description */}
             {event.description && (
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">About this event</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">{t('description')}</h2>
                 <p className="text-gray-700 whitespace-pre-wrap">{event.description}</p>
               </div>
             )}
@@ -256,8 +289,25 @@ const EventDetail = () => {
             {/* Rejection Reason (if rejected) */}
             {event.status === 'rejected' && event.rejection_reason && (
               <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-md">
-                <h3 className="text-lg font-semibold text-red-800 mb-2">Rejection Reason</h3>
+                <h3 className="text-lg font-semibold text-red-800 mb-2">{t('rejectionReason')}</h3>
                 <p className="text-red-700">{event.rejection_reason}</p>
+              </div>
+            )}
+
+            {/* Cancelled Event Notice */}
+            {event.status === 'cancelled' && (
+              <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-md">
+                <div className="flex items-start">
+                  <svg className="w-6 h-6 text-orange-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-lg font-semibold text-orange-900 mb-1">{t('eventCancelledNotice')}</h3>
+                    <p className="text-orange-800">
+                      {isRegistered ? t('youWereRegistered') : t('thisEventCancelled')}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -269,17 +319,27 @@ const EventDetail = () => {
                   disabled={registering}
                   className="flex-1 bg-red-600 text-white py-3 px-6 rounded-md font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {registering ? 'Registering...' : 'Register for Event'}
+                  {registering ? t('registering') : t('registerForEvent')}
                 </button>
               )}
 
-              {isRegistered && (
+              {isRegistered && event.status === 'approved' && (
                 <button
                   onClick={handleUnregister}
                   disabled={registering}
                   className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-md font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {registering ? 'Processing...' : 'Unregister'}
+                  {registering ? t('processing') : t('unregister')}
+                </button>
+              )}
+
+              {canCancel && (
+                <button
+                  onClick={handleCancel}
+                  disabled={cancelling}
+                  className="flex-1 bg-orange-600 text-white py-3 px-6 rounded-md font-medium hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {cancelling ? t('processing') : t('cancelEvent')}
                 </button>
               )}
 
@@ -287,7 +347,7 @@ const EventDetail = () => {
                 onClick={() => navigate('/')}
                 className="px-6 py-3 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
               >
-                Back to Events
+                {t('backToEvents')}
               </button>
             </div>
 

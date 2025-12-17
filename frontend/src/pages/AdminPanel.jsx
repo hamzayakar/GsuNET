@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { usersAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import Pagination from '../components/Pagination';
 
 const AdminPanel = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterRole, setFilterRole] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchUsers();
+    setCurrentPage(1); // Reset to first page when filter changes
   }, [filterRole]);
 
   const fetchUsers = async () => {
@@ -20,7 +26,7 @@ const AdminPanel = () => {
       const data = await usersAPI.getAll(params);
       setUsers(data);
     } catch (error) {
-      toast.error('Failed to load users');
+      toast.error(t('failedToLoadUsers'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -30,24 +36,24 @@ const AdminPanel = () => {
   const handleRoleChange = async (userId, newRole) => {
     try {
       await usersAPI.update(userId, { role: newRole });
-      toast.success('User role updated successfully');
+      toast.success(t('userRoleUpdated'));
       fetchUsers();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to update user role');
+      toast.error(error.response?.data?.detail || t('failedToUpdateRole'));
     }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    if (!window.confirm(t('areYouSureDelete'))) {
       return;
     }
 
     try {
       await usersAPI.delete(userId);
-      toast.success('User deleted successfully');
+      toast.success(t('userDeleted'));
       fetchUsers();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to delete user');
+      toast.error(error.response?.data?.detail || t('failedToDeleteUser'));
     }
   };
 
@@ -61,21 +67,26 @@ const AdminPanel = () => {
     return colors[role] || 'bg-gray-100 text-gray-800';
   };
 
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const paginatedUsers = users.slice(indexOfFirstItem, indexOfLastItem);
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('userManagement')}</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Manage all users in the system. You can update roles and delete users.
+            {t('manageAllUsers')}
           </p>
         </div>
 
         {/* Filter */}
         <div className="mb-6">
           <label htmlFor="roleFilter" className="block text-sm font-medium text-gray-700 mb-2">
-            Filter by Role
+            {t('filterByRole')}
           </label>
           <select
             id="roleFilter"
@@ -83,11 +94,11 @@ const AdminPanel = () => {
             onChange={(e) => setFilterRole(e.target.value)}
             className="block w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
           >
-            <option value="">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="advisor">Advisor</option>
-            <option value="club_manager">Club Manager</option>
-            <option value="student">Student</option>
+            <option value="">{t('allRoles')}</option>
+            <option value="admin">{t('admin')}</option>
+            <option value="advisor">{t('advisor')}</option>
+            <option value="club_manager">{t('club_manager')}</option>
+            <option value="student">{t('student')}</option>
           </select>
         </div>
 
@@ -103,22 +114,22 @@ const AdminPanel = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
+                      {t('name')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
+                      {t('email')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Student Number
+                      {t('studentNumber')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Department
+                      {t('department')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
+                      {t('role')}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      {t('actions')}
                     </th>
                   </tr>
                 </thead>
@@ -126,16 +137,16 @@ const AdminPanel = () => {
                   {users.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
-                        No users found
+                        {t('noUsersFound')}
                       </td>
                     </tr>
                   ) : (
-                    users.map((u) => (
+                    paginatedUsers.map((u) => (
                       <tr key={u.id} className={u.id === user?.id ? 'bg-yellow-50' : ''}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{u.full_name}</div>
                           {u.id === user?.id && (
-                            <span className="text-xs text-yellow-600 font-semibold">(You)</span>
+                            <span className="text-xs text-yellow-600 font-semibold">{t('you')}</span>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -158,10 +169,10 @@ const AdminPanel = () => {
                                 : 'cursor-pointer'
                             } ${getRoleBadgeColor(u.role)}`}
                           >
-                            <option value="student">Student</option>
-                            <option value="club_manager">Club Manager</option>
-                            <option value="advisor">Advisor</option>
-                            <option value="admin">Admin</option>
+                            <option value="student">{t('student')}</option>
+                            <option value="club_manager">{t('club_manager')}</option>
+                            <option value="advisor">{t('advisor')}</option>
+                            <option value="admin">{t('admin')}</option>
                           </select>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -171,9 +182,9 @@ const AdminPanel = () => {
                             className={`text-red-600 hover:text-red-900 ${
                               u.id === user?.id ? 'cursor-not-allowed opacity-40' : ''
                             }`}
-                            title={u.id === user?.id ? 'You cannot delete your own account' : 'Delete user'}
+                            title={u.id === user?.id ? t('cannotDeleteSelf') : t('deleteUser')}
                           >
-                            Delete
+                            {t('delete')}
                           </button>
                         </td>
                       </tr>
@@ -186,10 +197,20 @@ const AdminPanel = () => {
             {/* Summary */}
             <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
               <p className="text-sm text-gray-700">
-                Total Users: <span className="font-semibold">{users.length}</span>
+                {t('totalUsers')}: <span className="font-semibold">{users.length}</span>
               </p>
             </div>
           </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && users.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalItems={users.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+          />
         )}
       </div>
     </div>

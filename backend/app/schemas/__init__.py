@@ -35,6 +35,7 @@ from app.schemas.event_registration import (
     EventRegistrationCreate,
     EventRegistrationResponse,
     EventRegistrationListResponse,
+    EventRegistrationWithEventResponse,
 )
 from app.schemas.notification import (
     NotificationBase,
@@ -80,6 +81,7 @@ __all__ = [
     "EventRegistrationCreate",
     "EventRegistrationResponse",
     "EventRegistrationListResponse",
+    "EventRegistrationWithEventResponse",
     # Notification schemas
     "NotificationBase",
     "NotificationCreate",
@@ -91,3 +93,7 @@ __all__ = [
     "ClubJoinRequestReview",
     "ClubJoinRequestResponse",
 ]
+
+# Rebuild models to resolve forward references
+EventResponse.model_rebuild()
+EventRegistrationWithEventResponse.model_rebuild()

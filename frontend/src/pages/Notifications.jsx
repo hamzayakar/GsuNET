@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { notificationsAPI } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import toast from 'react-hot-toast';
@@ -19,7 +20,7 @@ const Notifications = () => {
       const data = await notificationsAPI.getAll();
       setNotifications(data);
     } catch (error) {
-      toast.error('Failed to load notifications');
+      toast.error(t('failedToLoadNotifications'));
       console.error(error);
     } finally {
       setLoading(false);
@@ -32,9 +33,9 @@ const Notifications = () => {
       setNotifications(
         notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
       );
-      toast.success('Marked as read');
+      toast.success(t('markedAsRead'));
     } catch (error) {
-      toast.error('Failed to mark as read');
+      toast.error(t('failedToMarkAsRead'));
     }
   };
 
@@ -42,9 +43,9 @@ const Notifications = () => {
     try {
       await notificationsAPI.markAllAsRead();
       setNotifications(notifications.map((n) => ({ ...n, read: true })));
-      toast.success('All notifications marked as read');
+      toast.success(t('allNotificationsMarkedAsRead'));
     } catch (error) {
-      toast.error('Failed to mark all as read');
+      toast.error(t('failedToMarkAllAsRead'));
     }
   };
 
@@ -52,9 +53,9 @@ const Notifications = () => {
     try {
       await notificationsAPI.delete(id);
       setNotifications(notifications.filter((n) => n.id !== id));
-      toast.success('Notification deleted');
+      toast.success(t('notificationDeleted'));
     } catch (error) {
-      toast.error('Failed to delete notification');
+      toast.error(t('failedToDeleteNotification'));
     }
   };
 
@@ -63,10 +64,21 @@ const Notifications = () => {
       const readNotifications = notifications.filter(n => n.read);
       await Promise.all(readNotifications.map(n => notificationsAPI.delete(n.id)));
       setNotifications(notifications.filter((n) => !n.read));
-      toast.success('All read notifications deleted');
+      toast.success(t('allReadNotificationsDeleted'));
     } catch (error) {
-      toast.error('Failed to delete notifications');
+      toast.error(t('failedToDeleteNotifications'));
     }
+  };
+
+  // Parse event ID from notification message
+  const getEventId = (message) => {
+    const match = message.match(/\|\|EVENT:(\d+)\|\|/);
+    return match ? parseInt(match[1]) : null;
+  };
+
+  // Remove event ID metadata from display message
+  const cleanMessage = (message) => {
+    return message.replace(/\|\|EVENT:\d+\|\|/, '').trim();
   };
 
   // Filter notifications based on selected filter
@@ -208,57 +220,70 @@ const Notifications = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredNotifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`bg-white rounded-lg shadow p-6 transition-all ${
-                !notification.read ? 'ring-2 ring-blue-500 ring-opacity-50' : ''
-              }`}
-            >
-              <div className="flex items-start gap-4">
-                {getNotificationIcon(notification.type)}
+          {filteredNotifications.map((notification) => {
+            const eventId = getEventId(notification.message);
+            const displayMessage = cleanMessage(notification.message);
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {notification.title}
-                      {!notification.read && (
-                        <span className="ml-2 inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+            return (
+              <div
+                key={notification.id}
+                className={`bg-white rounded-lg shadow p-6 transition-all ${
+                  !notification.read ? 'ring-2 ring-blue-500 ring-opacity-50' : ''
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  {getNotificationIcon(notification.type)}
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {notification.title}
+                        {!notification.read && (
+                          <span className="ml-2 inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+                        )}
+                      </h3>
+                      <span className="text-sm text-gray-500 whitespace-nowrap ml-4">
+                        {new Date(notification.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+
+                    <p className="text-gray-600 mb-4">{displayMessage}</p>
+
+                    <div className="flex gap-3">
+                      {eventId && (
+                        <Link
+                          to={`/event/${eventId}`}
+                          className="text-sm text-green-600 hover:text-green-800 font-medium transition-colors"
+                        >
+                          {t('viewEvent')}
+                        </Link>
                       )}
-                    </h3>
-                    <span className="text-sm text-gray-500 whitespace-nowrap ml-4">
-                      {new Date(notification.created_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </span>
-                  </div>
-
-                  <p className="text-gray-600 mb-4">{notification.message}</p>
-
-                  <div className="flex gap-3">
-                    {!notification.read && (
+                      {!notification.read && (
+                        <button
+                          onClick={() => markAsRead(notification.id)}
+                          className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors cursor-pointer"
+                        >
+                          {t('markAsRead')}
+                        </button>
+                      )}
                       <button
-                        onClick={() => markAsRead(notification.id)}
-                        className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                        onClick={() => deleteNotification(notification.id)}
+                        className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors cursor-pointer"
                       >
-                        {t('markAsRead')}
+                        {t('delete')}
                       </button>
-                    )}
-                    <button
-                      onClick={() => deleteNotification(notification.id)}
-                      className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors"
-                    >
-                      {t('delete')}
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

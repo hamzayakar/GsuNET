@@ -2,7 +2,7 @@
 Event management routes with approval workflow
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 
@@ -81,7 +81,7 @@ def send_event_reminders(db: Session):
                 # Create reminder notification
                 notification = Notification(
                     title=f"Reminder: {event.title}",
-                    message=f"Your registered event '{event.title}' is happening in 3 days on {event.event_datetime.strftime('%B %d, %Y at %I:%M %p')}. Don't forget to attend! Click to view details: /event/{event.id}",
+                    message=f"Your registered event '{event.title}' is happening in 3 days on {event.event_datetime.strftime('%B %d, %Y')}. Don't forget to attend!||EVENT:{event.id}||",
                     notification_type=NotificationType.EVENT_REMINDER,
                     user_id=registration.user_id,
                     read=False
@@ -111,7 +111,19 @@ async def create_event(
 
     Returns:
         Created event object
+
+    Raises:
+        HTTPException: If club manager tries to create event for a club they don't manage
     """
+    # Authorization check: club managers can only create events for their clubs
+    if current_user.role == UserRole.CLUB_MANAGER:
+        user_manages_club = any(club.id == event_data.club_id for club in current_user.managed_clubs)
+        if not user_manages_club:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only create events for clubs you manage"
+            )
+
     # Create new event with pending status
     new_event = Event(
         **event_data.dict(),
@@ -154,13 +166,16 @@ async def list_events(
     # Send event reminders for upcoming events
     send_event_reminders(db)
 
-    query = db.query(Event)
+    query = db.query(Event).options(joinedload(Event.club))
 
     if status:
         query = query.filter(Event.status == status)
 
     if club_id:
         query = query.filter(Event.club_id == club_id)
+
+    # Sort by event datetime (upcoming events first)
+    query = query.order_by(Event.event_datetime.asc())
 
     events = query.offset(skip).limit(limit).all()
     return events
@@ -189,7 +204,7 @@ async def get_event(
     # Auto-complete past events before fetching
     auto_complete_past_events(db)
 
-    event = db.query(Event).filter(Event.id == event_id).first()
+    event = db.query(Event).options(joinedload(Event.club)).filter(Event.id == event_id).first()
 
     if not event:
         raise HTTPException(
@@ -287,6 +302,75 @@ async def approve_event(
     # Add rejection reason if provided
     if approval_data.rejection_reason:
         event.rejection_reason = approval_data.rejection_reason
+
+    db.commit()
+    db.refresh(event)
+
+    return event
+
+
+@router.put("/{event_id}/cancel", response_model=EventResponse)
+async def cancel_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Cancel an approved event
+
+    Admin can cancel any event, manager/advisor can cancel their club's events.
+    Sends notifications to all registered users.
+
+    Args:
+        event_id: Event ID
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        Updated event object with cancelled status
+
+    Raises:
+        HTTPException: If event not found or unauthorized
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+
+    # Authorization: admin can cancel any event, manager/advisor only their club's events
+    if current_user.role != UserRole.ADMIN:
+        # Check if user manages the club that owns this event
+        user_manages_club = any(club.id == event.club_id for club in current_user.managed_clubs)
+        # Also check if user is advisor of the club
+        is_advisor = current_user.role == UserRole.ADVISOR and event.club.advisor_id == current_user.id
+
+        if not user_manages_club and not is_advisor:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to cancel this event"
+            )
+
+    # Update event status to cancelled
+    event.status = EventStatus.CANCELLED
+
+    # Get all registered users for this event
+    registrations = db.query(EventRegistration).filter(
+        EventRegistration.event_id == event_id
+    ).all()
+
+    # Send notification to all registered users
+    for registration in registrations:
+        notification = Notification(
+            title=f"Event Cancelled: {event.title}",
+            message=f"The event '{event.title}' scheduled for {event.event_datetime.strftime('%B %d, %Y')} has been cancelled.||EVENT:{event.id}||",
+            notification_type=NotificationType.EVENT_CANCELLED,
+            user_id=registration.user_id,
+            read=False
+        )
+        db.add(notification)
 
     db.commit()
     db.refresh(event)

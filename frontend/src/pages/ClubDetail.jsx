@@ -3,11 +3,13 @@ import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { clubsAPI, eventsAPI, clubJoinRequestsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import EventCard from '../components/EventCard';
 
 const ClubDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [club, setClub] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,9 +50,10 @@ const ClubDetail = () => {
         const clubMemberIds = clubData.members?.map(m => m.id) || [];
         setIsMember(clubMemberIds.includes(user.id));
 
-        // Check if user is a manager of this club
-        const clubManagerIds = clubData.managers?.map(m => m.id) || [];
-        const userIsManager = clubManagerIds.includes(user.id) || user.role === 'admin';
+        // Check if user is a manager or advisor of this club
+        const userIsManager = clubData.manager_id === user.id ||
+                              clubData.advisor_id === user.id ||
+                              user.role === 'admin';
         setIsManager(userIsManager);
 
         // Get user's join request status for this club
@@ -84,7 +87,7 @@ const ClubDetail = () => {
       setFollowLoading(true);
       await clubsAPI.follow(parseInt(id));
       setIsFollowing(true);
-      toast.success(`You are now following ${club.name}!`);
+      toast.success(`${t('nowFollowing')} ${club.name}!`);
     } catch (err) {
       console.error('Failed to follow club:', err);
       toast.error(err.response?.data?.detail || 'Failed to follow club');
@@ -98,7 +101,7 @@ const ClubDetail = () => {
       setFollowLoading(true);
       await clubsAPI.unfollow(parseInt(id));
       setIsFollowing(false);
-      toast.success(`You unfollowed ${club.name}`);
+      toast.success(`${t('unfollowed')} ${club.name}`);
     } catch (err) {
       console.error('Failed to unfollow club:', err);
       toast.error(err.response?.data?.detail || 'Failed to unfollow club');
@@ -111,7 +114,7 @@ const ClubDetail = () => {
     try {
       const response = await clubJoinRequestsAPI.create(parseInt(id));
       setJoinRequest(response);
-      toast.success('Join request sent! Club managers will review your request.');
+      toast.success(t('joinRequestSent'));
     } catch (err) {
       console.error('Failed to request join:', err);
       toast.error(err.response?.data?.detail || 'Failed to send join request');
@@ -122,7 +125,7 @@ const ClubDetail = () => {
     try {
       await clubJoinRequestsAPI.cancel(joinRequest.id);
       setJoinRequest(null);
-      toast.success('Join request cancelled');
+      toast.success(t('joinRequestCanceled'));
     } catch (err) {
       console.error('Failed to cancel request:', err);
       toast.error(err.response?.data?.detail || 'Failed to cancel request');
@@ -192,27 +195,28 @@ const ClubDetail = () => {
 
           {user && (
             <div className="flex gap-2">
-              {!isMember && !isManager && (
-                joinRequest ? (
-                  <button
-                    onClick={handleCancelRequest}
-                    className="px-6 py-2 rounded-md font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-                  >
-                    Request Pending
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleRequestJoin}
-                    className="px-6 py-2 rounded-md font-medium bg-green-600 text-white hover:bg-green-700"
-                  >
-                    Request to Join
-                  </button>
-                )
-              )}
-              {isMember && (
-                <span className="px-6 py-2 rounded-md font-medium bg-blue-100 text-blue-800">
-                  Member
+              {isManager ? (
+                <span className="px-6 py-2 rounded-md font-medium bg-purple-100 text-purple-800">
+                  {club.manager_id === user.id ? t('clubManager') : club.advisor_id === user.id ? t('advisor') : t('admin')}
                 </span>
+              ) : isMember ? (
+                <span className="px-6 py-2 rounded-md font-medium bg-blue-100 text-blue-800">
+                  {t('member')}
+                </span>
+              ) : joinRequest ? (
+                <button
+                  onClick={handleCancelRequest}
+                  className="px-6 py-2 rounded-md font-medium bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                >
+                  {t('requestPending')}
+                </button>
+              ) : (
+                <button
+                  onClick={handleRequestJoin}
+                  className="px-6 py-2 rounded-md font-medium bg-green-600 text-white hover:bg-green-700"
+                >
+                  {t('requestToJoin')}
+                </button>
               )}
               <button
                 onClick={isFollowing ? handleUnfollow : handleFollow}
@@ -223,7 +227,7 @@ const ClubDetail = () => {
                     : 'bg-red-600 text-white hover:bg-red-700'
                 }`}
               >
-                {followLoading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
+                {followLoading ? t('loading') : isFollowing ? t('following') : t('follow')}
               </button>
             </div>
           )}
@@ -261,14 +265,20 @@ const ClubDetail = () => {
             </div>
           )}
 
-          {club.member_count !== undefined && (
+          <div className="flex gap-6">
             <div className="flex items-center">
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              {club.member_count} members
+              {club.member_count || 0} {t('members')}
             </div>
-          )}
+            <div className="flex items-center">
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              {club.follower_count || 0} {t('followers')}
+            </div>
+          </div>
         </div>
       </div>
 

@@ -54,12 +54,12 @@ const Navbar = () => {
                   >
                     {t('myEvents')}
                   </Link>
-                  {user?.role === 'club_manager' && (
+                  {(user?.role === 'club_manager' || user?.role === 'advisor') && (
                     <Link
-                      to="/create-event"
+                      to="/club-management"
                       className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
                     >
-                      {t('createEvent')}
+                      {t('clubManagement')}
                     </Link>
                   )}
                   {(user?.role === 'advisor' || user?.role === 'admin') && (
@@ -71,12 +71,20 @@ const Navbar = () => {
                     </Link>
                   )}
                   {user?.role === 'admin' && (
-                    <Link
-                      to="/admin"
-                      className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      {t('adminPanel') || 'Admin Panel'}
-                    </Link>
+                    <>
+                      <Link
+                        to="/admin"
+                        className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                      >
+                        {t('adminPanel') || 'Admin Panel'}
+                      </Link>
+                      <Link
+                        to="/admin/clubs"
+                        className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
+                      >
+                        {t('clubs')}
+                      </Link>
+                    </>
                   )}
                 </div>
               )}
@@ -195,15 +203,15 @@ const Navbar = () => {
               <span className="text-xs mt-1">{t('myEvents')}</span>
             </Link>
 
-            {user?.role === 'club_manager' && (
+            {(user?.role === 'club_manager' || user?.role === 'advisor') && (
               <Link
-                to="/create-event"
+                to="/club-management"
                 className="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
-                <span className="text-xs mt-1">{t('create')}</span>
+                <span className="text-xs mt-1">{t('manage')}</span>
               </Link>
             )}
 

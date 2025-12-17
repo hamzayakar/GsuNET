@@ -118,6 +118,11 @@ export const eventsAPI = {
     return response.data;
   },
 
+  cancel: async (id) => {
+    const response = await api.put(`/events/${id}/cancel`);
+    return response.data;
+  },
+
   delete: async (id) => {
     const response = await api.delete(`/events/${id}`);
     return response.data;
@@ -190,6 +195,21 @@ export const clubsAPI = {
 
   getMyFollowedClubs: async () => {
     const response = await api.get('/users/me/followed-clubs');
+    return response.data;
+  },
+
+  getManagedClubs: async () => {
+    const response = await api.get('/users/me/managed-clubs');
+    return response.data;
+  },
+
+  getMembers: async (id) => {
+    const response = await api.get(`/clubs/${id}/members`);
+    return response.data;
+  },
+
+  removeMember: async (clubId, userId) => {
+    const response = await api.delete(`/clubs/${clubId}/members/${userId}`);
     return response.data;
   },
 };

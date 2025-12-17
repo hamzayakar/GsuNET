@@ -105,6 +105,17 @@ const NotificationBell = () => {
     }
   };
 
+  // Parse event ID from notification message
+  const getEventId = (message) => {
+    const match = message.match(/\|\|EVENT:(\d+)\|\|/);
+    return match ? parseInt(match[1]) : null;
+  };
+
+  // Remove event ID metadata from display message
+  const cleanMessage = (message) => {
+    return message.replace(/\|\|EVENT:\d+\|\|/, '').trim();
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Icon */}
@@ -159,67 +170,79 @@ const NotificationBell = () => {
                 <p className="mt-2 text-sm text-gray-500">No notifications</p>
               </div>
             ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                    !notification.read ? 'bg-blue-50' : ''
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1 mr-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-semibold text-sm text-gray-900">{notification.title}</h4>
-                        {!notification.read && (
-                          <span className="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-400">
-                          {new Date(notification.created_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                        <div className="flex space-x-2">
+              notifications.map((notification) => {
+                const eventId = getEventId(notification.message);
+                const displayMessage = cleanMessage(notification.message);
+
+                return (
+                  <div
+                    key={notification.id}
+                    className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                      !notification.read ? 'bg-blue-50' : ''
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 mr-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-semibold text-sm text-gray-900">{notification.title}</h4>
                           {!notification.read && (
-                            <button
-                              onClick={() => markAsRead(notification.id)}
-                              className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                            >
-                              Mark as read
-                            </button>
+                            <span className="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
                           )}
-                          <button
-                            onClick={() => deleteNotification(notification.id)}
-                            className="text-xs text-red-600 hover:text-red-800 font-medium"
-                          >
-                            Delete
-                          </button>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{displayMessage}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-400">
+                            {new Date(notification.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                          <div className="flex space-x-2">
+                            {eventId && (
+                              <Link
+                                to={`/event/${eventId}`}
+                                onClick={() => setIsOpen(false)}
+                                className="text-xs text-green-600 hover:text-green-800 font-medium"
+                              >
+                                View Event
+                              </Link>
+                            )}
+                            {!notification.read && (
+                              <button
+                                onClick={() => markAsRead(notification.id)}
+                                className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                              >
+                                Mark as read
+                              </button>
+                            )}
+                            <button
+                              onClick={() => deleteNotification(notification.id)}
+                              className="text-xs text-red-600 hover:text-red-800 font-medium cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
           {/* View All Link */}
-          {notifications.length > 0 && (
-            <div className="p-3 border-t border-gray-200 bg-gray-50">
-              <Link
-                to="/notifications"
-                onClick={() => setIsOpen(false)}
-                className="block w-full text-center text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
-              >
-                View All Notifications
-              </Link>
-            </div>
-          )}
+          <div className="p-3 border-t border-gray-200 bg-gray-50">
+            <Link
+              to="/notifications"
+              onClick={() => setIsOpen(false)}
+              className="block w-full text-center text-sm font-medium text-red-600 hover:text-red-800 transition-colors"
+            >
+              View All Notifications
+            </Link>
+          </div>
         </div>
       )}
     </div>

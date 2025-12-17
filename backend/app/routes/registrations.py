@@ -13,6 +13,7 @@ from app.schemas import (
     EventRegistrationCreate,
     EventRegistrationResponse,
     EventRegistrationListResponse,
+    EventRegistrationWithEventResponse,
 )
 
 router = APIRouter(prefix="/events", tags=["Event Registrations"])
@@ -55,8 +56,15 @@ async def register_for_event(
 
     # Check if event is members-only
     if event.members_only:
-        # Check if user is a member of the club
-        is_member = current_user in event.club.members
+        from app.models import ClubJoinRequest, JoinRequestStatus
+
+        # Check if user is a member of the club (approved join request)
+        is_member = db.query(ClubJoinRequest).filter(
+            ClubJoinRequest.user_id == current_user.id,
+            ClubJoinRequest.club_id == event.club_id,
+            ClubJoinRequest.status == JoinRequestStatus.APPROVED
+        ).first() is not None
+
         is_manager = any(club.id == event.club_id for club in current_user.managed_clubs)
 
         if not is_member and not is_manager and current_user.role != UserRole.ADMIN:
@@ -198,7 +206,7 @@ async def get_event_registrations(
 user_router = APIRouter(prefix="/users", tags=["Event Registrations"])
 
 
-@user_router.get("/me/registrations", response_model=List[EventRegistrationListResponse])
+@user_router.get("/me/registrations", response_model=List[EventRegistrationWithEventResponse])
 async def get_my_registrations(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -211,26 +219,18 @@ async def get_my_registrations(
         current_user: Current authenticated user
 
     Returns:
-        List of events user is registered for
+        List of registrations with full event details
     """
-    registrations = db.query(EventRegistration).filter(
+    from sqlalchemy.orm import joinedload
+
+    registrations = db.query(EventRegistration).options(
+        joinedload(EventRegistration.event).joinedload(Event.club)
+    ).join(
+        Event, EventRegistration.event_id == Event.id
+    ).filter(
         EventRegistration.user_id == current_user.id
+    ).order_by(
+        Event.event_datetime.asc()
     ).all()
 
-    # Build response with event details
-    result = []
-    for reg in registrations:
-        event = reg.event
-        reg_dict = {
-            "event_id": event.id,
-            "title": event.title,
-            "description": event.description,
-            "event_datetime": event.event_datetime,
-            "location": event.location,
-            "club_name": event.club.name if event.club else None,
-            "registered_at": reg.registered_at,
-            "attended": reg.attended,
-        }
-        result.append(EventRegistrationListResponse(**reg_dict))
-
-    return result
+    return registrations

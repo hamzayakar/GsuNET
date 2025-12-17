@@ -85,6 +85,26 @@ const Home = () => {
           >
             {t('completed')}
           </button>
+          <button
+            onClick={() => setFilter('rejected')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              filter === 'rejected'
+                ? 'bg-primary text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {t('rejected')}
+          </button>
+          <button
+            onClick={() => setFilter('cancelled')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              filter === 'cancelled'
+                ? 'bg-primary text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {t('cancelled')}
+          </button>
         </div>
       </div>
 

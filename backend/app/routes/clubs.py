@@ -66,10 +66,38 @@ async def list_clubs(
         db: Database session
 
     Returns:
-        List of clubs
+        List of clubs with member and follower counts
     """
+    from app.models import ClubJoinRequest, JoinRequestStatus
+
     clubs = db.query(Club).offset(skip).limit(limit).all()
-    return clubs
+
+    # Enrich with counts
+    result = []
+    for club in clubs:
+        # Count approved join requests as members
+        member_count = db.query(ClubJoinRequest).filter(
+            ClubJoinRequest.club_id == club.id,
+            ClubJoinRequest.status == JoinRequestStatus.APPROVED
+        ).count()
+
+        # Count followers
+        follower_count = len(club.followers)
+
+        result.append(ClubResponse(
+            id=club.id,
+            name=club.name,
+            description=club.description,
+            logo_url=club.logo_url,
+            contact_email=club.contact_email,
+            manager_id=club.manager_id,
+            advisor_id=club.advisor_id,
+            created_at=club.created_at,
+            member_count=member_count,
+            follower_count=follower_count
+        ))
+
+    return result
 
 
 @router.get("/{club_id}", response_model=ClubResponse)
@@ -90,6 +118,8 @@ async def get_club(
     Raises:
         HTTPException: If club not found
     """
+    from app.models import ClubJoinRequest, JoinRequestStatus
+
     club = db.query(Club).filter(Club.id == club_id).first()
 
     if not club:
@@ -98,7 +128,27 @@ async def get_club(
             detail="Club not found"
         )
 
-    return club
+    # Count approved join requests as members
+    member_count = db.query(ClubJoinRequest).filter(
+        ClubJoinRequest.club_id == club.id,
+        ClubJoinRequest.status == JoinRequestStatus.APPROVED
+    ).count()
+
+    # Count followers
+    follower_count = len(club.followers)
+
+    return ClubResponse(
+        id=club.id,
+        name=club.name,
+        description=club.description,
+        logo_url=club.logo_url,
+        contact_email=club.contact_email,
+        manager_id=club.manager_id,
+        advisor_id=club.advisor_id,
+        created_at=club.created_at,
+        member_count=member_count,
+        follower_count=follower_count
+    )
 
 
 @router.put("/{club_id}", response_model=ClubResponse)
@@ -316,4 +366,187 @@ async def get_my_followed_clubs(
     Returns:
         List of clubs user is following
     """
-    return current_user.followed_clubs
+    from app.models import ClubJoinRequest, JoinRequestStatus
+
+    followed_clubs = current_user.followed_clubs
+
+    # Enrich with counts
+    result = []
+    for club in followed_clubs:
+        # Count approved join requests as members
+        member_count = db.query(ClubJoinRequest).filter(
+            ClubJoinRequest.club_id == club.id,
+            ClubJoinRequest.status == JoinRequestStatus.APPROVED
+        ).count()
+
+        # Count followers
+        follower_count = len(club.followers)
+
+        result.append(ClubResponse(
+            id=club.id,
+            name=club.name,
+            description=club.description,
+            logo_url=club.logo_url,
+            contact_email=club.contact_email,
+            manager_id=club.manager_id,
+            advisor_id=club.advisor_id,
+            created_at=club.created_at,
+            member_count=member_count,
+            follower_count=follower_count
+        ))
+
+    return result
+
+
+@user_clubs_router.get("/me/managed-clubs", response_model=List[ClubResponse])
+async def get_my_managed_clubs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get clubs that current user manages (as manager or advisor)
+
+    Args:
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        List of clubs user manages
+    """
+    from app.models import ClubJoinRequest, JoinRequestStatus
+
+    # Get clubs where user is manager or advisor
+    managed_clubs = db.query(Club).filter(
+        (Club.manager_id == current_user.id) | (Club.advisor_id == current_user.id)
+    ).all()
+
+    # Enrich with counts
+    result = []
+    for club in managed_clubs:
+        # Count approved join requests as members
+        member_count = db.query(ClubJoinRequest).filter(
+            ClubJoinRequest.club_id == club.id,
+            ClubJoinRequest.status == JoinRequestStatus.APPROVED
+        ).count()
+
+        # Count followers
+        follower_count = len(club.followers)
+
+        result.append(ClubResponse(
+            id=club.id,
+            name=club.name,
+            description=club.description,
+            logo_url=club.logo_url,
+            contact_email=club.contact_email,
+            manager_id=club.manager_id,
+            advisor_id=club.advisor_id,
+            created_at=club.created_at,
+            member_count=member_count,
+            follower_count=follower_count
+        ))
+
+    return result
+
+
+@router.get("/{club_id}/members")
+async def get_club_members(
+    club_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get approved members of a club
+
+    Args:
+        club_id: Club ID
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        List of approved members with their join request info
+
+    Raises:
+        HTTPException: If club not found
+    """
+    from app.models import ClubJoinRequest, JoinRequestStatus
+    from app.schemas import UserResponse
+
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Club not found"
+        )
+
+    # Get approved join requests
+    approved_requests = db.query(ClubJoinRequest).filter(
+        ClubJoinRequest.club_id == club_id,
+        ClubJoinRequest.status == JoinRequestStatus.APPROVED
+    ).all()
+
+    members = []
+    for req in approved_requests:
+        members.append({
+            "id": req.user.id,
+            "full_name": req.user.full_name,
+            "email": req.user.email,
+            "student_number": req.user.student_number,
+            "department": req.user.department,
+            "joined_at": req.reviewed_at,
+            "join_request_id": req.id
+        })
+
+    return members
+
+
+@router.delete("/{club_id}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_club_member(
+    club_id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Remove a member from a club (manager/advisor only)
+
+    Args:
+        club_id: Club ID
+        user_id: User ID to remove
+        db: Database session
+        current_user: Current authenticated user
+
+    Raises:
+        HTTPException: If club not found, user not authorized, or member not found
+    """
+    from app.models import ClubJoinRequest, JoinRequestStatus
+
+    club = db.query(Club).filter(Club.id == club_id).first()
+    if not club:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Club not found"
+        )
+
+    # Check if current user is manager or advisor of this club
+    if current_user.role not in [UserRole.ADMIN] and club.manager_id != current_user.id and club.advisor_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to manage this club"
+        )
+
+    # Find the approved join request
+    join_request = db.query(ClubJoinRequest).filter(
+        ClubJoinRequest.club_id == club_id,
+        ClubJoinRequest.user_id == user_id,
+        ClubJoinRequest.status == JoinRequestStatus.APPROVED
+    ).first()
+
+    if not join_request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Member not found in this club"
+        )
+
+    # Delete the join request (removes membership)
+    db.delete(join_request)
+    db.commit()

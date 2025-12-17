@@ -4,21 +4,6 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          DEFAULT: '#a90432',  // Galatasaray red
-          dark: '#8a0329',
-          light: '#c20541',
-        },
-        secondary: {
-          DEFAULT: '#fbc02d',  // Galatasaray yellow
-          dark: '#f9a825',
-          light: '#fdd835',
-        },
-      },
-    },
-  },
-  plugins: [],
+  // Tailwind v4: Colors defined in @theme directive in index.css
+  // No need for theme.extend here anymore
 }

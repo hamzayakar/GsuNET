@@ -1,9 +1,14 @@
 """
 Event Registration schemas for API validation
 """
+from __future__ import annotations
+
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.schemas.event import EventResponse
 
 
 class EventRegistrationBase(BaseModel):
@@ -42,6 +47,19 @@ class EventRegistrationListResponse(BaseModel):
     club_name: Optional[str]
     registered_at: datetime
     attended: bool
+
+    class Config:
+        from_attributes = True
+
+
+class EventRegistrationWithEventResponse(BaseModel):
+    """Schema for registration with full event object"""
+    id: int
+    user_id: int
+    event_id: int
+    attended: bool
+    registered_at: datetime
+    event: Optional[EventResponse] = None
 
     class Config:
         from_attributes = True

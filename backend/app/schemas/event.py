@@ -1,10 +1,15 @@
 """
 Event Pydantic schemas for request/response validation
 """
+from __future__ import annotations
+
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from app.models.event import EventStatus
+
+if TYPE_CHECKING:
+    from app.schemas.club import ClubResponse
 
 
 # Base schema
@@ -49,6 +54,7 @@ class EventResponse(EventBase):
     approved_by_id: Optional[int]
     registration_count: int = 0
     members_only: bool = False
+    club: Optional[ClubResponse] = None
 
     class Config:
         from_attributes = True
