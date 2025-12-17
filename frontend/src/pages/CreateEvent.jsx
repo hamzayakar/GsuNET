@@ -133,6 +133,16 @@ const CreateEvent = () => {
     setLoading(true);
     setError('');
 
+    // Frontend validation for capacity
+    const expectedCap = parseInt(formData.expected_capacity);
+    const maxCap = parseInt(formData.max_capacity);
+
+    if (expectedCap > maxCap) {
+      setError(t('expectedCapacityExceedsMax') || 'Expected capacity cannot exceed maximum capacity');
+      setLoading(false);
+      return;
+    }
+
     try {
       // Prepare data for submission
       const eventData = {
@@ -140,8 +150,8 @@ const CreateEvent = () => {
         description: formData.description,
         event_datetime: new Date(formData.event_datetime).toISOString(),
         duration: parseInt(formData.duration),
-        expected_capacity: parseInt(formData.expected_capacity),
-        max_capacity: parseInt(formData.max_capacity),
+        expected_capacity: expectedCap,
+        max_capacity: maxCap,
         club_id: parseInt(formData.club_id),
         room_id: formData.room_id ? parseInt(formData.room_id) : null,
         location: formData.location || null,
@@ -315,6 +325,11 @@ const CreateEvent = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 placeholder={t('enterMaxCapacity')}
               />
+              {formData.expected_capacity && formData.max_capacity && parseInt(formData.expected_capacity) > parseInt(formData.max_capacity) && (
+                <p className="mt-1 text-sm text-red-600">
+                  ⚠️ Maximum capacity must be greater than or equal to expected capacity
+                </p>
+              )}
             </div>
 
             {/* Conflict Warning */}

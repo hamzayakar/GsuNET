@@ -21,7 +21,6 @@ class EventBase(BaseModel):
     location: Optional[str] = None
     expected_capacity: Optional[int] = None
     max_capacity: Optional[int] = None
-    image_url: Optional[str] = None
     members_only: bool = False
 
     @field_validator('duration')
@@ -31,6 +30,16 @@ class EventBase(BaseModel):
         if not 30 <= v <= 360:
             raise ValueError('Duration must be between 30 and 360 minutes (0.5 to 6 hours)')
         return v
+
+    @field_validator('max_capacity')
+    @classmethod
+    def validate_capacity(cls, max_cap, info):
+        """Ensure expected_capacity <= max_capacity"""
+        expected_cap = info.data.get('expected_capacity')
+        if expected_cap is not None and max_cap is not None:
+            if expected_cap > max_cap:
+                raise ValueError(f'Expected capacity ({expected_cap}) cannot exceed maximum capacity ({max_cap})')
+        return max_cap
 
 
 # Schema for creating an event
@@ -48,7 +57,6 @@ class EventUpdate(BaseModel):
     location: Optional[str] = None
     expected_capacity: Optional[int] = None
     max_capacity: Optional[int] = None
-    image_url: Optional[str] = None
     room_id: Optional[int] = None
     members_only: Optional[bool] = None
 

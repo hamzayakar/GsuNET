@@ -11,13 +11,15 @@ const AdminPanel = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterRole, setFilterRole] = useState('');
+  const [filterName, setFilterName] = useState('');
+  const [filterStudentNumber, setFilterStudentNumber] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
   useEffect(() => {
     fetchUsers();
     setCurrentPage(1); // Reset to first page when filter changes
-  }, [filterRole]);
+  }, [filterRole, filterName, filterStudentNumber]);
 
   const fetchUsers = async () => {
     try {
@@ -67,10 +69,17 @@ const AdminPanel = () => {
     return colors[role] || 'bg-gray-100 text-gray-800';
   };
 
+  // Filter users by name and student number (client-side filtering)
+  const filteredUsers = users.filter(u => {
+    const matchesName = filterName ? u.full_name?.toLowerCase().includes(filterName.toLowerCase()) : true;
+    const matchesStudentNumber = filterStudentNumber ? u.student_number?.includes(filterStudentNumber) : true;
+    return matchesName && matchesStudentNumber;
+  });
+
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedUsers = users.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -83,23 +92,73 @@ const AdminPanel = () => {
           </p>
         </div>
 
-        {/* Filter */}
-        <div className="mb-6">
-          <label htmlFor="roleFilter" className="block text-sm font-medium text-gray-700 mb-2">
-            {t('filterByRole')}
-          </label>
-          <select
-            id="roleFilter"
-            value={filterRole}
-            onChange={(e) => setFilterRole(e.target.value)}
-            className="block w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
-          >
-            <option value="">{t('allRoles')}</option>
-            <option value="admin">{t('admin')}</option>
-            <option value="advisor">{t('advisor')}</option>
-            <option value="club_manager">{t('club_manager')}</option>
-            <option value="student">{t('student')}</option>
-          </select>
+        {/* Filters */}
+        <div className="mb-6 bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('filters')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Role Filter */}
+            <div>
+              <label htmlFor="roleFilter" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('filterByRole')}
+              </label>
+              <select
+                id="roleFilter"
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+              >
+                <option value="">{t('allRoles')}</option>
+                <option value="admin">{t('admin')}</option>
+                <option value="advisor">{t('advisor')}</option>
+                <option value="club_manager">{t('club_manager')}</option>
+                <option value="student">{t('student')}</option>
+              </select>
+            </div>
+
+            {/* Name Filter */}
+            <div>
+              <label htmlFor="nameFilter" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('filterByName') || 'Filter by Name'}
+              </label>
+              <input
+                type="text"
+                id="nameFilter"
+                value={filterName}
+                onChange={(e) => setFilterName(e.target.value)}
+                placeholder={t('enterName') || 'Enter name...'}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+
+            {/* Student Number Filter */}
+            <div>
+              <label htmlFor="studentNumberFilter" className="block text-sm font-medium text-gray-700 mb-2">
+                {t('filterByStudentNumber') || 'Filter by Student Number'}
+              </label>
+              <input
+                type="text"
+                id="studentNumberFilter"
+                value={filterStudentNumber}
+                onChange={(e) => setFilterStudentNumber(e.target.value)}
+                placeholder={t('enterStudentNumber') || 'Enter student number...'}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+          </div>
+
+          {/* Clear Filters Button */}
+          {(filterRole || filterName || filterStudentNumber) && (
+            <button
+              onClick={() => {
+                setFilterRole('');
+                setFilterName('');
+                setFilterStudentNumber('');
+              }}
+              className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium"
+            >
+              {t('clearFilters') || 'Clear Filters'}
+            </button>
+          )}
         </div>
 
         {/* Table */}
@@ -134,7 +193,7 @@ const AdminPanel = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users.length === 0 ? (
+                  {paginatedUsers.length === 0 ? (
                     <tr>
                       <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
                         {t('noUsersFound')}
@@ -197,17 +256,17 @@ const AdminPanel = () => {
             {/* Summary */}
             <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
               <p className="text-sm text-gray-700">
-                {t('totalUsers')}: <span className="font-semibold">{users.length}</span>
+                {t('showing')}: <span className="font-semibold">{filteredUsers.length}</span> {t('of')} <span className="font-semibold">{users.length}</span> {t('users')}
               </p>
             </div>
           </div>
         )}
 
         {/* Pagination */}
-        {!loading && users.length > 0 && (
+        {!loading && filteredUsers.length > 0 && (
           <Pagination
             currentPage={currentPage}
-            totalItems={users.length}
+            totalItems={filteredUsers.length}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
           />

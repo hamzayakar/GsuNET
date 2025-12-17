@@ -33,7 +33,6 @@ class Event(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    image_url = Column(String, nullable=True)
 
     # Date and time
     event_datetime = Column(DateTime(timezone=True), nullable=False, index=True)

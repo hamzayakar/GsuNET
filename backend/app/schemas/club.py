@@ -10,7 +10,6 @@ from datetime import datetime
 class ClubBase(BaseModel):
     name: str
     description: Optional[str] = None
-    logo_url: Optional[str] = None
     contact_email: Optional[EmailStr] = None
 
 
@@ -24,7 +23,6 @@ class ClubCreate(ClubBase):
 class ClubUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    logo_url: Optional[str] = None
     contact_email: Optional[EmailStr] = None
     manager_id: Optional[int] = None
     advisor_id: Optional[int] = None

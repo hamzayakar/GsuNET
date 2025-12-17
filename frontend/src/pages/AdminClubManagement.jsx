@@ -16,7 +16,6 @@ const AdminClubManagement = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    logo_url: '',
     contact_email: '',
     manager_id: '',
     advisor_id: '',
@@ -63,7 +62,6 @@ const AdminClubManagement = () => {
       const clubData = {
         name: formData.name,
         description: formData.description || null,
-        logo_url: formData.logo_url || null,
         contact_email: formData.contact_email || null,
         manager_id: formData.manager_id ? parseInt(formData.manager_id) : null,
         advisor_id: formData.advisor_id ? parseInt(formData.advisor_id) : null,
@@ -76,7 +74,6 @@ const AdminClubManagement = () => {
       setFormData({
         name: '',
         description: '',
-        logo_url: '',
         contact_email: '',
         manager_id: '',
         advisor_id: '',
@@ -96,7 +93,6 @@ const AdminClubManagement = () => {
     setFormData({
       name: club.name,
       description: club.description || '',
-      logo_url: club.logo_url || '',
       contact_email: club.contact_email || '',
       manager_id: club.manager_id || '',
       advisor_id: club.advisor_id || '',
@@ -119,7 +115,6 @@ const AdminClubManagement = () => {
       const clubData = {
         name: formData.name,
         description: formData.description || null,
-        logo_url: formData.logo_url || null,
         contact_email: formData.contact_email || null,
         manager_id: formData.manager_id ? parseInt(formData.manager_id) : null,
         advisor_id: formData.advisor_id ? parseInt(formData.advisor_id) : null,
@@ -133,7 +128,6 @@ const AdminClubManagement = () => {
       setFormData({
         name: '',
         description: '',
-        logo_url: '',
         contact_email: '',
         manager_id: '',
         advisor_id: '',
@@ -277,22 +271,6 @@ const AdminClubManagement = () => {
                 </select>
               </div>
 
-              {/* Logo URL */}
-              <div className="md:col-span-2">
-                <label htmlFor="logo_url" className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('logoUrl')}
-                </label>
-                <input
-                  type="url"
-                  id="logo_url"
-                  name="logo_url"
-                  value={formData.logo_url}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder={t('enterLogoUrl')}
-                />
-              </div>
-
               {/* Description */}
               <div className="md:col-span-2">
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
@@ -372,14 +350,6 @@ const AdminClubManagement = () => {
                   <tr key={club.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        {club.logo_url && (
-                          <img
-                            src={club.logo_url}
-                            alt={club.name}
-                            className="h-10 w-10 rounded-full mr-3"
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        )}
                         <div>
                           <div className="text-sm font-medium text-gray-900">{club.name}</div>
                           {club.description && (

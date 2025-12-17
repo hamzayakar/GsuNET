@@ -8,9 +8,11 @@ const ScheduleManagement = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [schedules, setSchedules] = useState([]);
+  const [weeklySchedule, setWeeklySchedule] = useState({});
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [currentWeekStart, setCurrentWeekStart] = useState(getMonday(new Date()));
 
   const [formData, setFormData] = useState({
     room_id: '',
@@ -24,6 +26,30 @@ const ScheduleManagement = () => {
 
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+  // Helper function to get Monday of the week for a given date
+  function getMonday(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    return new Date(d.setDate(diff));
+  }
+
+  // Format date as YYYY-MM-DD
+  function formatDate(date) {
+    return date.toISOString().split('T')[0];
+  }
+
+  // Get dates for the current week (Monday to Sunday)
+  function getWeekDates(weekStart) {
+    const dates = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      dates.push(date);
+    }
+    return dates;
+  }
+
   // Redirect if not admin
   useEffect(() => {
     if (user && user.role !== 'admin') {
@@ -35,7 +61,8 @@ const ScheduleManagement = () => {
   useEffect(() => {
     fetchSchedules();
     fetchRooms();
-  }, []);
+    fetchWeeklySchedule();
+  }, [currentWeekStart]);
 
   const fetchSchedules = async () => {
     try {
@@ -46,6 +73,29 @@ const ScheduleManagement = () => {
       toast.error('Failed to load schedules');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWeeklySchedule = async () => {
+    try {
+      const weekDates = getWeekDates(currentWeekStart);
+      const schedulePromises = weekDates.map(date =>
+        api.get('/schedule/daily', {
+          params: { schedule_date: formatDate(date) }
+        })
+      );
+
+      const responses = await Promise.all(schedulePromises);
+      const newWeeklySchedule = {};
+
+      responses.forEach((response, index) => {
+        newWeeklySchedule[index] = response.data.blocks || [];
+      });
+
+      setWeeklySchedule(newWeeklySchedule);
+    } catch (err) {
+      console.error('Failed to fetch weekly schedule:', err);
+      toast.error('Failed to load weekly schedule');
     }
   };
 
@@ -92,10 +142,27 @@ const ScheduleManagement = () => {
       await api.delete(`/schedule/${id}`);
       toast.success('Schedule block deleted');
       fetchSchedules();
+      fetchWeeklySchedule();
     } catch (err) {
       console.error('Failed to delete schedule:', err);
       toast.error('Failed to delete schedule block');
     }
+  };
+
+  const goToPreviousWeek = () => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(newWeekStart.getDate() - 7);
+    setCurrentWeekStart(newWeekStart);
+  };
+
+  const goToNextWeek = () => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(newWeekStart.getDate() + 7);
+    setCurrentWeekStart(newWeekStart);
+  };
+
+  const goToCurrentWeek = () => {
+    setCurrentWeekStart(getMonday(new Date()));
   };
 
   if (loading) {
@@ -274,6 +341,113 @@ const ScheduleManagement = () => {
               <li>Approved events are automatically added to the schedule</li>
               <li>Only delete recurring blocks here (not event blocks)</li>
             </ul>
+          </div>
+        </div>
+
+        {/* Weekly Schedule View */}
+        <div className="bg-white rounded-lg shadow-md p-6 mt-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Weekly Schedule View</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={goToPreviousWeek}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                ← Previous Week
+              </button>
+              <button
+                onClick={goToCurrentWeek}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Current Week
+              </button>
+              <button
+                onClick={goToNextWeek}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Next Week →
+              </button>
+            </div>
+          </div>
+
+          {/* Week Range Display */}
+          <div className="text-center mb-4 text-gray-700">
+            <span className="font-medium">
+              {formatDate(currentWeekStart)} - {formatDate(new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000))}
+            </span>
+          </div>
+
+          {/* Weekly Grid */}
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-7 gap-2 min-w-max">
+              {getWeekDates(currentWeekStart).map((date, dayIndex) => (
+                <div key={dayIndex} className="border rounded-lg p-3 bg-gray-50 min-w-[150px]">
+                  <div className="font-bold text-center mb-2 text-gray-800 border-b pb-2">
+                    <div>{dayNames[dayIndex]}</div>
+                    <div className="text-sm text-gray-600">{formatDate(date)}</div>
+                  </div>
+                  <div className="space-y-2">
+                    {weeklySchedule[dayIndex] && weeklySchedule[dayIndex].length > 0 ? (
+                      weeklySchedule[dayIndex]
+                        .sort((a, b) => a.start_time.localeCompare(b.start_time))
+                        .map((block, blockIndex) => (
+                          <div
+                            key={blockIndex}
+                            className={`text-xs p-2 rounded ${
+                              block.block_type === 'class'
+                                ? 'bg-blue-100 border border-blue-300'
+                                : block.block_type === 'event'
+                                ? 'bg-green-100 border border-green-300'
+                                : block.block_type === 'reserved'
+                                ? 'bg-yellow-100 border border-yellow-300'
+                                : 'bg-gray-100 border border-gray-300'
+                            }`}
+                          >
+                            <div className="font-semibold truncate" title={block.title}>
+                              {block.title}
+                            </div>
+                            <div className="text-gray-700 mt-1">
+                              {block.start_time} - {block.end_time}
+                            </div>
+                            <div className="text-gray-600 truncate" title={block.room_name}>
+                              {block.room_name}
+                            </div>
+                            {block.is_recurring ? (
+                              <div className="text-gray-500 italic mt-1">Recurring</div>
+                            ) : (
+                              <div className="text-green-700 font-medium mt-1">Event</div>
+                            )}
+                          </div>
+                        ))
+                    ) : (
+                      <div className="text-gray-400 text-xs text-center py-4">No schedule</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 text-sm text-gray-600">
+            <p className="font-medium">Legend:</p>
+            <div className="flex flex-wrap gap-4 mt-2">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+                <span>Recurring Class</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                <span>Event (One-time)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-yellow-100 border border-yellow-300 rounded"></div>
+                <span>Reserved</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-gray-100 border border-gray-300 rounded"></div>
+                <span>Maintenance</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

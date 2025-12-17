@@ -180,16 +180,6 @@ const ClubDetail = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Club Header */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        {club.logo_url && (
-          <div className="mb-4">
-            <img
-              src={club.logo_url}
-              alt={club.name}
-              className="w-24 h-24 object-cover rounded-full"
-            />
-          </div>
-        )}
-
         <div className="flex items-start justify-between mb-4">
           <h1 className="text-3xl font-bold text-gray-900">{club.name}</h1>
 

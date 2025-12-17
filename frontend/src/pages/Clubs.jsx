@@ -112,16 +112,6 @@ const Clubs = () => {
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
                 >
                   <div className="p-6">
-                    {club.logo_url && (
-                      <div className="mb-4 flex justify-center">
-                        <img
-                          src={club.logo_url}
-                          alt={club.name}
-                          className="w-20 h-20 object-cover rounded-full"
-                        />
-                      </div>
-                    )}
-
                     <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">
                       {club.name}
                     </h3>

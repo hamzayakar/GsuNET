@@ -10,6 +10,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
+  const [showMobileAdminMenu, setShowMobileAdminMenu] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -264,7 +265,7 @@ const Navbar = () => {
 
             {user?.role === 'admin' && (
               <button
-                onClick={() => navigate('/admin')}
+                onClick={() => setShowMobileAdminMenu(true)}
                 className="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,6 +333,59 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Admin Menu Modal */}
+      {showMobileAdminMenu && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-50"
+            onClick={() => setShowMobileAdminMenu(false)}
+          />
+          <div className="md:hidden fixed bottom-20 left-4 right-4 bg-white rounded-lg shadow-xl z-50 p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Admin Panel</h3>
+              <button
+                onClick={() => setShowMobileAdminMenu(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-2">
+              <Link
+                to="/admin"
+                onClick={() => setShowMobileAdminMenu(false)}
+                className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
+              >
+                User Management
+              </Link>
+              <Link
+                to="/admin/clubs"
+                onClick={() => setShowMobileAdminMenu(false)}
+                className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
+              >
+                Club Management
+              </Link>
+              <Link
+                to="/admin/schedule"
+                onClick={() => setShowMobileAdminMenu(false)}
+                className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
+              >
+                Schedule
+              </Link>
+              <Link
+                to="/admin/rooms"
+                onClick={() => setShowMobileAdminMenu(false)}
+                className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
+              >
+                Rooms
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Spacer for fixed navbars */}
       <div className="h-14 md:h-16"></div>

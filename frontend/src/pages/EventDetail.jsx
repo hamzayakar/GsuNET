@@ -166,17 +166,6 @@ const EventDetail = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Event Image */}
-          {event.image_url && (
-            <div className="w-full h-96 overflow-hidden">
-              <img
-                src={event.image_url}
-                alt={event.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
           {/* Event Content */}
           <div className="p-8">
             {/* Header */}

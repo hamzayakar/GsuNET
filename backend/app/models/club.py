@@ -15,7 +15,6 @@ class Club(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False, index=True)
     description = Column(Text, nullable=True)
-    logo_url = Column(String, nullable=True)
     contact_email = Column(String, nullable=True)
 
     # Foreign keys

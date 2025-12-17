@@ -27,16 +27,6 @@ const EventCard = ({ event }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      {event.image_url && (
-        <div className="h-48 overflow-hidden">
-          <img
-            src={event.image_url}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-
       <div className="p-4">
         <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
           <div className="flex items-center gap-2">
