@@ -65,52 +65,55 @@ const Navbar = () => {
                     </Link>
                   )}
                   {(user?.role === 'advisor' || user?.role === 'admin') && (
-                    <Link
-                      to="/approval-panel"
-                      className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                      {t('approvalPanel')}
-                    </Link>
-                  )}
-                  {user?.role === 'admin' && (
                     <div className="relative">
                       <button
                         onClick={() => setShowAdminMenu(!showAdminMenu)}
                         className="text-gray-900 hover:text-primary px-3 py-2 rounded-md text-sm font-medium flex items-center"
                       >
-                        Admin ▾
+                        {user?.role === 'admin' ? t('adminPanel') : t('approvalPanel')} ▾
                       </button>
                       {showAdminMenu && (
                         <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
                           <div className="py-1">
                             <Link
-                              to="/admin"
+                              to="/approval-panel"
                               onClick={() => setShowAdminMenu(false)}
                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             >
-                              User Management
+                              {t('approvalPanel')}
                             </Link>
-                            <Link
-                              to="/admin/clubs"
-                              onClick={() => setShowAdminMenu(false)}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              Club Management
-                            </Link>
-                            <Link
-                              to="/admin/schedule"
-                              onClick={() => setShowAdminMenu(false)}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              Schedule
-                            </Link>
-                            <Link
-                              to="/admin/rooms"
-                              onClick={() => setShowAdminMenu(false)}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              Rooms
-                            </Link>
+                            {user?.role === 'admin' && (
+                              <>
+                                <Link
+                                  to="/admin"
+                                  onClick={() => setShowAdminMenu(false)}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  {t('userManagement')}
+                                </Link>
+                                <Link
+                                  to="/admin/clubs"
+                                  onClick={() => setShowAdminMenu(false)}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  {t('adminClubManagement')}
+                                </Link>
+                                <Link
+                                  to="/admin/schedule"
+                                  onClick={() => setShowAdminMenu(false)}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  {t('schedule')}
+                                </Link>
+                                <Link
+                                  to="/admin/rooms"
+                                  onClick={() => setShowAdminMenu(false)}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  {t('rooms')}
+                                </Link>
+                              </>
+                            )}
                           </div>
                         </div>
                       )}
@@ -252,26 +255,15 @@ const Navbar = () => {
             )}
 
             {(user?.role === 'advisor' || user?.role === 'admin') && (
-              <Link
-                to="/approval-panel"
-                className="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-xs mt-1">{t('approve')}</span>
-              </Link>
-            )}
-
-            {user?.role === 'admin' && (
               <button
                 onClick={() => setShowMobileAdminMenu(true)}
                 className="flex flex-col items-center justify-center flex-1 text-gray-600 hover:text-primary"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="text-xs mt-1">Admin</span>
+                <span className="text-xs mt-1">{user?.role === 'admin' ? t('adminPanel') : t('approve')}</span>
               </button>
             )}
 
@@ -338,12 +330,12 @@ const Navbar = () => {
       {showMobileAdminMenu && (
         <>
           <div
-            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-50"
+            className="md:hidden fixed inset-0 bg-gray-900/30 backdrop-blur-sm z-50"
             onClick={() => setShowMobileAdminMenu(false)}
           />
           <div className="md:hidden fixed bottom-20 left-4 right-4 bg-white rounded-lg shadow-xl z-50 p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Admin Panel</h3>
+              <h3 className="text-lg font-bold text-gray-900">{user?.role === 'admin' ? t('adminPanel') : t('approvalPanel')}</h3>
               <button
                 onClick={() => setShowMobileAdminMenu(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -355,33 +347,44 @@ const Navbar = () => {
             </div>
             <div className="space-y-2">
               <Link
-                to="/admin"
+                to="/approval-panel"
                 onClick={() => setShowMobileAdminMenu(false)}
                 className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
               >
-                User Management
+                {t('approvalPanel')}
               </Link>
-              <Link
-                to="/admin/clubs"
-                onClick={() => setShowMobileAdminMenu(false)}
-                className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
-              >
-                Club Management
-              </Link>
-              <Link
-                to="/admin/schedule"
-                onClick={() => setShowMobileAdminMenu(false)}
-                className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
-              >
-                Schedule
-              </Link>
-              <Link
-                to="/admin/rooms"
-                onClick={() => setShowMobileAdminMenu(false)}
-                className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
-              >
-                Rooms
-              </Link>
+              {user?.role === 'admin' && (
+                <>
+                  <Link
+                    to="/admin"
+                    onClick={() => setShowMobileAdminMenu(false)}
+                    className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
+                  >
+                    {t('userManagement')}
+                  </Link>
+                  <Link
+                    to="/admin/clubs"
+                    onClick={() => setShowMobileAdminMenu(false)}
+                    className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
+                  >
+                    {t('adminClubManagement')}
+                  </Link>
+                  <Link
+                    to="/admin/schedule"
+                    onClick={() => setShowMobileAdminMenu(false)}
+                    className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
+                  >
+                    {t('schedule')}
+                  </Link>
+                  <Link
+                    to="/admin/rooms"
+                    onClick={() => setShowMobileAdminMenu(false)}
+                    className="block px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md font-medium"
+                  >
+                    {t('rooms')}
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </>

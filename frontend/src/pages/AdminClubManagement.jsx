@@ -147,7 +147,6 @@ const AdminClubManagement = () => {
     setFormData({
       name: '',
       description: '',
-      logo_url: '',
       contact_email: '',
       manager_id: '',
       advisor_id: '',

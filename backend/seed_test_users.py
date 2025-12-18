@@ -194,7 +194,6 @@ def create_clubs(db, users_by_role):
             "name": "Computer Science Club",
             "description": "A club for computer science enthusiasts to learn, share, and collaborate on projects.",
             "contact_email": "csclub@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/0000FF/FFFFFF?text=CS",
             "manager_id": managers[0].id,
             "advisor_id": advisors[0].id
         },
@@ -202,7 +201,6 @@ def create_clubs(db, users_by_role):
             "name": "Robotics Club",
             "description": "Building and programming robots, participating in competitions.",
             "contact_email": "robotics@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/FF0000/FFFFFF?text=ROBOT",
             "manager_id": managers[1].id,
             "advisor_id": advisors[1].id
         },
@@ -210,7 +208,6 @@ def create_clubs(db, users_by_role):
             "name": "AI & Machine Learning Club",
             "description": "Exploring artificial intelligence and machine learning technologies.",
             "contact_email": "aiclub@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/00FF00/FFFFFF?text=AI",
             "manager_id": managers[2].id,
             "advisor_id": advisors[0].id
         },
@@ -218,7 +215,6 @@ def create_clubs(db, users_by_role):
             "name": "Photography Club",
             "description": "Capturing moments, learning photography techniques, organizing photo walks.",
             "contact_email": "photo@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/FFA500/FFFFFF?text=PHOTO",
             "manager_id": managers[3].id,
             "advisor_id": advisors[2].id
         },
@@ -226,7 +222,6 @@ def create_clubs(db, users_by_role):
             "name": "Music Club",
             "description": "For music lovers. Jam sessions, concerts, music theory workshops.",
             "contact_email": "music@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/800080/FFFFFF?text=MUSIC",
             "manager_id": managers[4].id,
             "advisor_id": advisors[2].id
         },
@@ -234,7 +229,6 @@ def create_clubs(db, users_by_role):
             "name": "Theater Club",
             "description": "Drama, acting, stage performances, and theatrical productions.",
             "contact_email": "theater@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/FF1493/FFFFFF?text=THEATER",
             "manager_id": managers[5].id,
             "advisor_id": advisors[3].id
         },
@@ -242,7 +236,6 @@ def create_clubs(db, users_by_role):
             "name": "Sports Club",
             "description": "Organizing sports events, tournaments, and promoting active lifestyle.",
             "contact_email": "sports@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/1E90FF/FFFFFF?text=SPORTS",
             "manager_id": managers[6].id,
             "advisor_id": advisors[3].id
         },
@@ -250,7 +243,6 @@ def create_clubs(db, users_by_role):
             "name": "Literature Club",
             "description": "Book discussions, creative writing, poetry readings, and literary events.",
             "contact_email": "literature@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/8B4513/FFFFFF?text=LIT",
             "manager_id": managers[7].id,
             "advisor_id": advisors[4].id
         },
@@ -258,7 +250,6 @@ def create_clubs(db, users_by_role):
             "name": "Chess Club",
             "description": "Strategic thinking through chess. Tournaments, training, and friendly matches.",
             "contact_email": "chess@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/000000/FFFFFF?text=CHESS",
             "manager_id": managers[8].id,
             "advisor_id": advisors[4].id
         },
@@ -266,7 +257,6 @@ def create_clubs(db, users_by_role):
             "name": "Environmental Club",
             "description": "Promoting sustainability, organizing clean-up drives, and environmental awareness campaigns.",
             "contact_email": "environment@gsu.edu.tr",
-            "logo_url": "https://via.placeholder.com/100/228B22/FFFFFF?text=ENV",
             "manager_id": managers[9].id,
             "advisor_id": advisors[0].id
         }
@@ -532,7 +522,29 @@ def create_events(db, clubs_list, rooms, users_by_role):
 
     db.commit()
 
+    # Create RoomSchedule entries for approved/completed events
+    schedule_count = 0
+    for event in events:
+        if event.status in [EventStatus.APPROVED, EventStatus.COMPLETED] and event.room_id:
+            schedule = RoomSchedule(
+                room_id=event.room_id,
+                title=event.title,
+                description=event.description,
+                block_type=BlockType.EVENT,
+                start_time=event.event_datetime.time(),
+                end_time=event.end_time.time(),
+                is_recurring=False,
+                specific_date=event.event_datetime.date(),
+                event_id=event.id,
+                created_by=event.approved_by_id
+            )
+            db.add(schedule)
+            schedule_count += 1
+
+    db.commit()
+
     print(f"   ✅ Created {len(events)} events")
+    print(f"   📅 Created {schedule_count} event schedule blocks for weekly view")
     return events
 
 
