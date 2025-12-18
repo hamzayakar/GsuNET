@@ -348,6 +348,7 @@ const translations = {
     total: 'total',
     showing: 'Showing',
     users: 'users',
+    items: 'items',
 
     // Schedule Management
     weeklyScheduleManagement: 'Weekly Class Schedule Management',
@@ -387,6 +388,10 @@ const translations = {
     filters: 'Filters',
     filterByName: 'Filter by Name',
     filterByStudentNumber: 'Filter by Student Number',
+    filterByRoom: 'Filter by Room',
+    filterByDay: 'Filter by Day',
+    allRooms: 'All Rooms',
+    allDays: 'All Days',
     enterName: 'Enter name...',
     enterStudentNumber: 'Enter student number...',
     clearFilters: 'Clear Filters',
@@ -759,6 +764,7 @@ const translations = {
     total: 'toplam',
     showing: 'Gösterilen',
     users: 'kullanıcı',
+    items: 'öğe',
 
     // Schedule Management
     weeklyScheduleManagement: 'Haftalık Ders Programı Yönetimi',
@@ -798,6 +804,10 @@ const translations = {
     filters: 'Filtreler',
     filterByName: 'İsme Göre Filtrele',
     filterByStudentNumber: 'Öğrenci Numarasına Göre Filtrele',
+    filterByRoom: 'Odaya Göre Filtrele',
+    filterByDay: 'Güne Göre Filtrele',
+    allRooms: 'Tüm Odalar',
+    allDays: 'Tüm Günler',
     enterName: 'İsim girin...',
     enterStudentNumber: 'Öğrenci numarası girin...',
     clearFilters: 'Filtreleri Temizle',
@@ -1170,6 +1180,7 @@ const translations = {
     total: 'au total',
     showing: 'Affichage',
     users: 'utilisateurs',
+    items: 'éléments',
 
     // Schedule Management
     weeklyScheduleManagement: 'Gestion de l\'emploi du temps hebdomadaire',
@@ -1209,6 +1220,10 @@ const translations = {
     filters: 'Filtres',
     filterByName: 'Filtrer par nom',
     filterByStudentNumber: 'Filtrer par numéro d\'étudiant',
+    filterByRoom: 'Filtrer par salle',
+    filterByDay: 'Filtrer par jour',
+    allRooms: 'Toutes les salles',
+    allDays: 'Tous les jours',
     enterName: 'Entrez le nom...',
     enterStudentNumber: 'Entrez le numéro d\'étudiant...',
     clearFilters: 'Effacer les filtres',

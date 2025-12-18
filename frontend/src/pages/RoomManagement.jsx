@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -12,6 +12,8 @@ const RoomManagement = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -42,6 +44,13 @@ const RoomManagement = () => {
       setLoading(false);
     }
   };
+
+  // Pagination logic
+  const totalPages = Math.ceil(rooms.length / itemsPerPage);
+  const paginatedRooms = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return rooms.slice(start, start + itemsPerPage);
+  }, [rooms, currentPage]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -136,6 +145,36 @@ const RoomManagement = () => {
             </form>
           )}
 
+          {/* Pagination Controls */}
+          {rooms.length > 0 && (
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-sm text-gray-500">
+                {t('showing')} {paginatedRooms.length} / {rooms.length} {t('items')}
+              </div>
+              {totalPages > 1 && (
+                <div className="flex gap-2 items-center">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    {t('previous')}
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    {t('page')} {currentPage} {t('of')} {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  >
+                    {t('next')}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Room List */}
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -147,7 +186,7 @@ const RoomManagement = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {rooms.map((room) => (
+                {paginatedRooms.map((room) => (
                   <tr key={room.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {room.name}

@@ -169,8 +169,9 @@ async def list_events(
     # Auto-complete past events before fetching
     auto_complete_past_events(db)
 
-    # Send event reminders for upcoming events
-    send_event_reminders(db)
+    # NOTE: Event reminders are now sent via background worker
+    # See app/worker.py for scheduled task configuration
+    # send_event_reminders(db)  # Removed - now async via ARQ worker
 
     query = db.query(Event).options(joinedload(Event.club))
 
@@ -381,7 +382,7 @@ async def cancel_event(
     Cancel an approved event
 
     Admin can cancel any event, manager/advisor can cancel their club's events.
-    Sends notifications to all registered users.
+    Sends notifications to all registered users via background task queue.
 
     Args:
         event_id: Event ID
@@ -418,22 +419,6 @@ async def cancel_event(
     # Update event status to cancelled
     event.status = EventStatus.CANCELLED
 
-    # Get all registered users for this event
-    registrations = db.query(EventRegistration).filter(
-        EventRegistration.event_id == event_id
-    ).all()
-
-    # Send notification to all registered users
-    for registration in registrations:
-        notification = Notification(
-            title=f"Event Cancelled: {event.title}",
-            message=f"The event '{event.title}' scheduled for {event.event_datetime.strftime('%B %d, %Y')} has been cancelled.||EVENT:{event.id}||",
-            notification_type=NotificationType.EVENT_CANCELLED,
-            user_id=registration.user_id,
-            read=False
-        )
-        db.add(notification)
-
     # LIFECYCLE HOOK: Remove from room schedule when cancelled
     db.query(RoomSchedule).filter(
         RoomSchedule.event_id == event.id
@@ -441,6 +426,24 @@ async def cancel_event(
 
     db.commit()
     db.refresh(event)
+
+    # 🚀 Queue background task to send notifications to all registered users
+    # This happens asynchronously and doesn't block the HTTP response
+    try:
+        from app.core.redis import get_redis_pool
+
+        redis = await get_redis_pool()
+        await redis.enqueue_job(
+            'send_event_cancellation_notifications',
+            event_id=event.id,
+            event_title=event.title,
+            event_datetime=event.event_datetime.isoformat()
+        )
+    except Exception as e:
+        # Log error but don't fail the request - notifications are best-effort
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to queue cancellation notifications for event {event_id}: {e}")
 
     return event
 

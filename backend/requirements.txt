@@ -12,3 +12,4 @@ python-dateutil==2.8.2
 email-validator==2.1.0
 alembic==1.12.1
 redis==5.0.1
+arq==0.26.1
