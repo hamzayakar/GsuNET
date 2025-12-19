@@ -208,6 +208,19 @@ const EventDetail = () => {
                 <div>
                   <p className="text-sm text-gray-500">{t('dateAndTime')}</p>
                   <p className="text-lg text-gray-900">{formatDate(event.event_datetime)}</p>
+                  {event.end_time && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {t('endTime')}: {new Date(event.end_time).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
+                      {event.duration && (
+                        <span className="ml-2 text-gray-500">
+                          ({event.duration >= 60
+                            ? `${Math.floor(event.duration / 60)}${t('hour')}${event.duration % 60 > 0 ? ` ${event.duration % 60}${t('minute')}` : ''}`
+                            : `${event.duration}${t('minute')}`
+                          })
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
 

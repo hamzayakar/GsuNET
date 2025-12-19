@@ -65,9 +65,10 @@ async def send_daily_event_reminders(ctx):
                     # Create reminder notification
                     notification = Notification(
                         title=f"Reminder: {event.title}",
-                        message=f"Your registered event '{event.title}' is happening in 3 days on {formatted_date}. Don't forget to attend!||EVENT:{event.id}||",
+                        message=f"Your registered event '{event.title}' is happening in 3 days on {formatted_date}. Don't forget to attend!",
                         notification_type=NotificationType.EVENT_REMINDER,
                         user_id=registration.user_id,
+                        event_id=event.id,
                         read=False
                     )
                     db.add(notification)

@@ -245,6 +245,14 @@ const translations = {
     enterExpectedCapacity: 'Enter expected capacity',
     enterMaxCapacity: 'Enter maximum capacity',
     theseRoomsRecommended: 'These rooms are recommended based on your expected capacity',
+    scheduleConflictsDetected: 'Schedule Conflicts Detected',
+    conflictWarningMessage: 'The following rooms have conflicts at the selected time. Available conflict-free rooms are shown below. You may still select a conflicting room if approved by an advisor.',
+    weeklyClass: 'Weekly Class',
+    conflictOverrideNote: 'Note: Advisors can approve events with schedule conflicts if there\'s a valid reason (e.g., class cancellation).',
+    expectedCapacityHelp: 'Estimated number of participants (for planning)',
+    maxCapacityHelp: 'Maximum registration limit. Room recommendations are based on this number.',
+    eventDateMustBeFuture: 'Event date must be in the future',
+    enterJoinRequestMessage: 'Why would you like to join this club? (Optional)',
     enterLocation: 'Enter location (auto-filled if room selected)',
     imageUrl: 'Image URL (Optional)',
     membersOnly: 'Members Only',
@@ -255,6 +263,27 @@ const translations = {
     eventCancelledNotice: 'Event Cancelled',
     youWereRegistered: 'You were registered for this event.',
     thisEventCancelled: 'This event has been cancelled.',
+
+    // Duration and Time
+    endTime: 'End Time',
+    hour: 'h',
+    minute: 'min',
+    duration: 'Duration',
+    durationMinutes: 'Duration (minutes)',
+    selectDuration: 'Select how long your event will last',
+    minutes: 'minutes',
+    hours: 'hours',
+
+    // Room Notes
+    roomNote: 'Room Note (Optional)',
+    roomNoteHelp: 'Add extra info about the room (e.g., which floor, entrance)',
+    enterRoomNote: 'e.g., Top floor of H building',
+
+    // Room Size Warning
+    roomTooLarge: 'Room may be too large',
+    roomTooLargeInfo: 'Rooms >25% larger than max capacity can only be booked <24h before event if no other bookings exist.',
+    roomUnavailable: 'Unavailable',
+    roomAvailableSoon: 'Available (last minute)',
 
     // AdminPanel
     userManagement: 'User Management',
@@ -661,6 +690,14 @@ const translations = {
     enterExpectedCapacity: 'Beklenen kapasiteyi girin',
     enterMaxCapacity: 'Maksimum kapasiteyi girin',
     theseRoomsRecommended: 'Bu odalar beklenen kapasitenize göre önerilmektedir',
+    scheduleConflictsDetected: 'Çakışma Tespit Edildi',
+    conflictWarningMessage: 'Seçilen saatte aşağıdaki odalarda çakışma bulunmaktadır. Çakışma olmayan odalar aşağıda gösterilmektedir. Danışman onayı ile çakışan odayı da seçebilirsiniz.',
+    weeklyClass: 'Haftalık Ders',
+    conflictOverrideNote: 'Not: Danışmanlar geçerli bir sebep varsa (örn. ders iptali) çakışmalı etkinlikleri onaylayabilir.',
+    expectedCapacityHelp: 'Tahmini katılımcı sayısı (planlama için)',
+    maxCapacityHelp: 'Maksimum kayıt limiti. Oda önerileri bu sayıya göre yapılır.',
+    eventDateMustBeFuture: 'Etkinlik tarihi gelecekte olmalıdır',
+    enterJoinRequestMessage: 'Bu kulübe neden katılmak istiyorsunuz? (Opsiyonel)',
     enterLocation: 'Konumu girin (oda seçilirse otomatik doldurulur)',
     imageUrl: 'Görsel URL (Opsiyonel)',
     membersOnly: 'Sadece Üyeler',
@@ -671,6 +708,27 @@ const translations = {
     eventCancelledNotice: 'Etkinlik İptal Edildi',
     youWereRegistered: 'Bu etkinliğe kayıtlıydınız.',
     thisEventCancelled: 'Bu etkinlik iptal edildi.',
+
+    // Duration and Time
+    endTime: 'Bitiş Saati',
+    hour: 's',
+    minute: 'dk',
+    duration: 'Süre',
+    durationMinutes: 'Süre (dakika)',
+    selectDuration: 'Etkinliğinizin ne kadar süreceğini seçin',
+    minutes: 'dakika',
+    hours: 'saat',
+
+    // Room Notes
+    roomNote: 'Oda Notu (Opsiyonel)',
+    roomNoteHelp: 'Oda hakkında ek bilgi ekleyin (örn: hangi kat, giriş)',
+    enterRoomNote: 'örn: H binasının en üst katı',
+
+    // Room Size Warning
+    roomTooLarge: 'Oda çok büyük olabilir',
+    roomTooLargeInfo: 'Maksimum kapasiteden %25 daha büyük odalar, sadece etkinliğe 24 saatten az kaldıysa ve başka rezervasyon yoksa seçilebilir.',
+    roomUnavailable: 'Uygun Değil',
+    roomAvailableSoon: 'Uygun (son dakika)',
 
     // AdminPanel
     userManagement: 'Kullanıcı Yönetimi',
@@ -1077,6 +1135,14 @@ const translations = {
     enterExpectedCapacity: 'Entrez la capacité attendue',
     enterMaxCapacity: 'Entrez la capacité maximale',
     theseRoomsRecommended: 'Ces salles sont recommandées en fonction de votre capacité attendue',
+    scheduleConflictsDetected: 'Conflits d\'horaire détectés',
+    conflictWarningMessage: 'Les salles suivantes ont des conflits à l\'heure sélectionnée. Les salles disponibles sans conflit sont affichées ci-dessous. Vous pouvez toujours sélectionner une salle en conflit si elle est approuvée par un conseiller.',
+    weeklyClass: 'Cours hebdomadaire',
+    conflictOverrideNote: 'Remarque: Les conseillers peuvent approuver des événements avec des conflits d\'horaire s\'il y a une raison valable (par ex. annulation de cours).',
+    expectedCapacityHelp: 'Nombre estimé de participants (pour la planification)',
+    maxCapacityHelp: 'Limite d\'inscription maximale. Les recommandations de salle sont basées sur ce nombre.',
+    eventDateMustBeFuture: 'La date de l\'événement doit être dans le futur',
+    enterJoinRequestMessage: 'Pourquoi souhaitez-vous rejoindre ce club? (Optionnel)',
     enterLocation: 'Entrez l\'emplacement (auto-rempli si une salle est sélectionnée)',
     imageUrl: 'URL de l\'image (Optionnel)',
     membersOnly: 'Membres uniquement',
@@ -1087,6 +1153,27 @@ const translations = {
     eventCancelledNotice: 'Événement annulé',
     youWereRegistered: 'Vous étiez inscrit à cet événement.',
     thisEventCancelled: 'Cet événement a été annulé.',
+
+    // Duration and Time
+    endTime: 'Heure de fin',
+    hour: 'h',
+    minute: 'min',
+    duration: 'Durée',
+    durationMinutes: 'Durée (minutes)',
+    selectDuration: 'Sélectionnez la durée de votre événement',
+    minutes: 'minutes',
+    hours: 'heures',
+
+    // Room Notes
+    roomNote: 'Note de salle (Optionnel)',
+    roomNoteHelp: 'Ajoutez des infos supplémentaires sur la salle (ex: étage, entrée)',
+    enterRoomNote: 'ex: Dernier étage du bâtiment H',
+
+    // Room Size Warning
+    roomTooLarge: 'Salle peut-être trop grande',
+    roomTooLargeInfo: 'Les salles >25% plus grandes que la capacité max ne peuvent être réservées que <24h avant l\'événement s\'il n\'y a pas d\'autres réservations.',
+    roomUnavailable: 'Indisponible',
+    roomAvailableSoon: 'Disponible (dernière minute)',
 
     // AdminPanel
     userManagement: 'Gestion des utilisateurs',

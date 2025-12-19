@@ -70,17 +70,6 @@ const Notifications = () => {
     }
   };
 
-  // Parse event ID from notification message
-  const getEventId = (message) => {
-    const match = message.match(/\|\|EVENT:(\d+)\|\|/);
-    return match ? parseInt(match[1]) : null;
-  };
-
-  // Remove event ID metadata from display message
-  const cleanMessage = (message) => {
-    return message.replace(/\|\|EVENT:\d+\|\|/, '').trim();
-  };
-
   // Filter notifications based on selected filter
   const filteredNotifications = notifications.filter((n) => {
     if (filter === 'unread') return !n.read;
@@ -220,11 +209,7 @@ const Notifications = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredNotifications.map((notification) => {
-            const eventId = getEventId(notification.message);
-            const displayMessage = cleanMessage(notification.message);
-
-            return (
+          {filteredNotifications.map((notification) => (
               <div
                 key={notification.id}
                 className={`bg-white rounded-lg shadow p-6 transition-all ${
@@ -253,12 +238,12 @@ const Notifications = () => {
                       </span>
                     </div>
 
-                    <p className="text-gray-600 mb-4">{displayMessage}</p>
+                    <p className="text-gray-600 mb-4">{notification.message}</p>
 
                     <div className="flex gap-3">
-                      {eventId && (
+                      {notification.event_id && (
                         <Link
-                          to={`/event/${eventId}`}
+                          to={`/event/${notification.event_id}`}
                           className="text-sm text-green-600 hover:text-green-800 font-medium transition-colors"
                         >
                           {t('viewEvent')}
@@ -282,8 +267,7 @@ const Notifications = () => {
                   </div>
                 </div>
               </div>
-            );
-          })}
+            ))}
         </div>
       )}
     </div>

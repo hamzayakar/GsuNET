@@ -413,6 +413,22 @@ def create_events(db, clubs_list, rooms, users_by_role):
         suitable_rooms = [r for r in rooms.values() if r.capacity >= capacity]
         return random.choice(suitable_rooms) if suitable_rooms else list(rooms.values())[0]
 
+    # Realistic event start times (avoiding class hours when possible)
+    # Weekday evening slots, weekend day slots
+    realistic_times = [
+        (17, 0),   # 17:00 - After classes
+        (17, 30),  # 17:30
+        (18, 0),   # 18:00 - Popular evening slot
+        (18, 30),  # 18:30
+        (19, 0),   # 19:00 - Evening events
+        (19, 30),  # 19:30
+        (10, 0),   # 10:00 - Weekend morning (Sat/Sun)
+        (11, 0),   # 11:00
+        (14, 0),   # 14:00 - Afternoon
+        (15, 0),   # 15:00
+        (16, 0),   # 16:00
+    ]
+
     event_titles = [
         ("Python Workshop for Beginners", "Learn Python basics with hands-on projects. Perfect for beginners!"),
         ("AI & Machine Learning Symposium", "Guest speakers from industry and academia discuss the latest in AI and ML."),
@@ -464,18 +480,26 @@ def create_events(db, clubs_list, rooms, users_by_role):
         elif i % 17 == 0:
             status = EventStatus.COMPLETED
             approved_by = random.choice(advisors).id
-            event_date = datetime.now(timezone.utc) - timedelta(days=random.randint(15, 60))
             rejection_reason = None
         else:
             status = EventStatus.APPROVED
             approved_by = random.choice(advisors).id
             rejection_reason = None
 
-        # Date calculation
+        # Date calculation with realistic times
+        # Pick a realistic time slot
+        hour, minute = random.choice(realistic_times)
+
         if status == EventStatus.COMPLETED:
-            event_datetime = datetime.now(timezone.utc) - timedelta(days=random.randint(15, 60))
+            # Past events (15-60 days ago)
+            days_ago = random.randint(15, 60)
+            base_date = datetime.now(timezone.utc).replace(hour=hour, minute=minute, second=0, microsecond=0)
+            event_datetime = base_date - timedelta(days=days_ago)
         else:
-            event_datetime = datetime.now(timezone.utc) + timedelta(days=random.randint(3, 60))
+            # Future events (3-60 days from now)
+            days_ahead = random.randint(3, 60)
+            base_date = datetime.now(timezone.utc).replace(hour=hour, minute=minute, second=0, microsecond=0)
+            event_datetime = base_date + timedelta(days=days_ahead)
 
         expected_capacity = random.choice([10, 15, 20, 30, 40, 50, 80, 100, 150, 200])
         max_capacity = int(expected_capacity * random.uniform(1.2, 1.5))
@@ -493,6 +517,16 @@ def create_events(db, clubs_list, rooms, users_by_role):
 
         # Calculate end_time from event_datetime + duration
         end_time = event_datetime + timedelta(minutes=duration)
+
+        # Skip events that would cross midnight after Istanbul timezone conversion
+        # (Schedule TIME field can't handle next-day times)
+        ISTANBUL_OFFSET = timedelta(hours=3)
+        event_time_istanbul = event_datetime + ISTANBUL_OFFSET
+        end_time_istanbul = end_time + ISTANBUL_OFFSET
+
+        if end_time_istanbul.date() > event_time_istanbul.date():
+            # Skip this event - would cross midnight in Istanbul time
+            continue
 
         event_dict = {
             "title": title,
@@ -523,18 +557,24 @@ def create_events(db, clubs_list, rooms, users_by_role):
     db.commit()
 
     # Create RoomSchedule entries for approved/completed events
+    # Note: Events that would cross midnight are already filtered out above
     schedule_count = 0
+    ISTANBUL_OFFSET = timedelta(hours=3)  # UTC+3
     for event in events:
         if event.status in [EventStatus.APPROVED, EventStatus.COMPLETED] and event.room_id:
+            # Convert UTC to Istanbul time for schedule display (time only)
+            event_time_istanbul = event.event_datetime + ISTANBUL_OFFSET
+            end_time_istanbul = event.end_time + ISTANBUL_OFFSET
+
             schedule = RoomSchedule(
                 room_id=event.room_id,
                 title=event.title,
                 description=event.description,
                 block_type=BlockType.EVENT,
-                start_time=event.event_datetime.time(),
-                end_time=event.end_time.time(),
+                start_time=event_time_istanbul.time(),
+                end_time=end_time_istanbul.time(),
                 is_recurring=False,
-                specific_date=event.event_datetime.date(),
+                specific_date=event.event_datetime.date(),  # Keep UTC date for matching
                 event_id=event.id,
                 created_by=event.approved_by_id
             )
@@ -736,15 +776,20 @@ def create_notifications(db, users_by_role, events):
             template = random.choice(notification_templates)
             title, message, notif_type, read = template
 
-            # Add event ID metadata for some notifications
-            if notif_type in [NotificationType.EVENT_REMINDER, NotificationType.EVENT_CANCELLED]:
+            # Link event for event-related notifications
+            event_id = None
+            if notif_type in [NotificationType.EVENT_REMINDER, NotificationType.EVENT_CANCELLED, NotificationType.EVENT_UPDATED, NotificationType.EVENT_CREATED]:
                 approved_events = [e for e in events if e.status == EventStatus.APPROVED]
                 if approved_events:
                     event = random.choice(approved_events)
-                    message = f"{message} ||EVENT:{event.id}||"
+                    event_id = event.id
+                    # Make message more specific
+                    if "an event" in message:
+                        message = message.replace("an event", f"'{event.title}'")
 
             notifications.append(Notification(
                 user_id=student.id,
+                event_id=event_id,
                 title=title,
                 message=message,
                 notification_type=notif_type,
@@ -758,8 +803,20 @@ def create_notifications(db, users_by_role, events):
             template = random.choice(notification_templates[1:])  # Exclude welcome
             title, message, notif_type, read = template
 
+            # Link event for event-related notifications (especially approval/rejection)
+            event_id = None
+            if notif_type in [NotificationType.EVENT_APPROVED, NotificationType.EVENT_REJECTED]:
+                # Find events created by this manager's club
+                manager_events = [e for e in events if e.club.manager_id == manager.id]
+                if manager_events:
+                    event = random.choice(manager_events)
+                    event_id = event.id
+                    # Make message specific to the event
+                    message = message.replace("Your event", f"Your event '{event.title}'")
+
             notifications.append(Notification(
                 user_id=manager.id,
+                event_id=event_id,
                 title=title,
                 message=message,
                 notification_type=notif_type,

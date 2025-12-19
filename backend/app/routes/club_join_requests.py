@@ -174,9 +174,10 @@ async def get_club_join_requests(
             detail="Club not found"
         )
 
-    # Check authorization: only club managers and admins can view requests
+    # Check authorization: only club managers and advisors can view requests
     is_manager = any(c.id == club_id for c in current_user.managed_clubs)
-    if not is_manager and current_user.role != UserRole.ADMIN:
+    is_advisor = club.advisor_id == current_user.id
+    if not is_manager and not is_advisor:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to view join requests for this club"
@@ -237,9 +238,11 @@ async def review_join_request(
             detail="Join request not found"
         )
 
-    # Check authorization: only club managers and admins can review
+    # Check authorization: only club managers and advisors can review
     is_manager = any(c.id == join_request.club_id for c in current_user.managed_clubs)
-    if not is_manager and current_user.role != UserRole.ADMIN:
+    club = db.query(Club).filter(Club.id == join_request.club_id).first()
+    is_advisor = club and club.advisor_id == current_user.id
+    if not is_manager and not is_advisor:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to review this join request"

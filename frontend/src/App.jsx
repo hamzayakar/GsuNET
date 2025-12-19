@@ -17,7 +17,6 @@ import MyEvents from './pages/MyEvents';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import ApprovalPanel from './pages/ApprovalPanel';
-import CreateEvent from './pages/CreateEvent';
 import ClubManagement from './pages/ClubManagement';
 import EventDetail from './pages/EventDetail';
 import AdminPanel from './pages/AdminPanel';
@@ -117,14 +116,6 @@ function App() {
                 element={
                   <ProtectedRoute roles={['advisor', 'admin']}>
                     <ApprovalPanel />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/create-event"
-                element={
-                  <ProtectedRoute roles={['club_manager', 'admin']}>
-                    <CreateEvent />
                   </ProtectedRoute>
                 }
               />

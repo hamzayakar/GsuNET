@@ -29,6 +29,7 @@ class NotificationResponse(NotificationBase):
     id: int
     read: bool
     user_id: int
+    event_id: Optional[int] = None  # Link to event (if notification is event-related)
     created_at: datetime
 
     class Config:

@@ -105,17 +105,6 @@ const NotificationBell = () => {
     }
   };
 
-  // Parse event ID from notification message
-  const getEventId = (message) => {
-    const match = message.match(/\|\|EVENT:(\d+)\|\|/);
-    return match ? parseInt(match[1]) : null;
-  };
-
-  // Remove event ID metadata from display message
-  const cleanMessage = (message) => {
-    return message.replace(/\|\|EVENT:\d+\|\|/, '').trim();
-  };
-
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Icon */}
@@ -170,11 +159,7 @@ const NotificationBell = () => {
                 <p className="mt-2 text-sm text-gray-500">No notifications</p>
               </div>
             ) : (
-              notifications.map((notification) => {
-                const eventId = getEventId(notification.message);
-                const displayMessage = cleanMessage(notification.message);
-
-                return (
+              notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
@@ -189,7 +174,7 @@ const NotificationBell = () => {
                             <span className="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 mb-2">{displayMessage}</p>
+                        <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
                         <div className="flex justify-between items-center">
                           <span className="text-xs text-gray-400">
                             {new Date(notification.created_at).toLocaleDateString('en-US', {
@@ -200,9 +185,9 @@ const NotificationBell = () => {
                             })}
                           </span>
                           <div className="flex space-x-2">
-                            {eventId && (
+                            {notification.event_id && (
                               <Link
-                                to={`/event/${eventId}`}
+                                to={`/event/${notification.event_id}`}
                                 onClick={() => setIsOpen(false)}
                                 className="text-xs text-green-600 hover:text-green-800 font-medium"
                               >
@@ -228,8 +213,7 @@ const NotificationBell = () => {
                       </div>
                     </div>
                   </div>
-                );
-              })
+                ))
             )}
           </div>
 

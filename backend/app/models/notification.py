@@ -36,12 +36,14 @@ class Notification(Base):
 
     # Foreign keys
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    event_id = Column(Integer, ForeignKey("events.id", ondelete="CASCADE"), nullable=True)  # Optional: link to event
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     user = relationship("User", back_populates="notifications")
+    event = relationship("Event", backref="notifications")
 
     def __repr__(self):
         return f"<Notification {self.title} for user={self.user_id}>"

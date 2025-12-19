@@ -158,9 +158,10 @@ async def send_event_cancellation_notifications(
         for registration in registrations:
             notification = Notification(
                 title=f"Event Cancelled: {event_title}",
-                message=f"The event '{event_title}' scheduled for {formatted_date} has been cancelled.||EVENT:{event_id}||",
+                message=f"The event '{event_title}' scheduled for {formatted_date} has been cancelled.",
                 notification_type=NotificationType.EVENT_CANCELLED,
                 user_id=registration.user_id,
+                event_id=event_id,
                 read=False
             )
             notifications.append(notification)
@@ -236,9 +237,10 @@ async def send_event_reminder_notifications(
             if not existing_reminder:
                 notification = Notification(
                     title=f"Reminder: {event.title}",
-                    message=f"Your registered event '{event.title}' is happening in 3 days on {formatted_date}. Don't forget to attend!||EVENT:{event.id}||",
+                    message=f"Your registered event '{event.title}' is happening in 3 days on {formatted_date}. Don't forget to attend!",
                     notification_type=NotificationType.EVENT_REMINDER,
                     user_id=registration.user_id,
+                    event_id=event.id,
                     read=False
                 )
                 db.add(notification)

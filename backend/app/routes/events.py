@@ -81,9 +81,10 @@ def send_event_reminders(db: Session):
                 # Create reminder notification
                 notification = Notification(
                     title=f"Reminder: {event.title}",
-                    message=f"Your registered event '{event.title}' is happening in 3 days on {event.event_datetime.strftime('%B %d, %Y')}. Don't forget to attend!||EVENT:{event.id}||",
+                    message=f"Your registered event '{event.title}' is happening in 3 days on {event.event_datetime.strftime('%B %d, %Y')}. Don't forget to attend!",
                     notification_type=NotificationType.EVENT_REMINDER,
                     user_id=registration.user_id,
+                    event_id=event.id,
                     read=False
                 )
                 db.add(notification)
@@ -126,6 +127,13 @@ async def create_event(
 
     # Create new event with pending status
     event_dict = event_data.dict()
+
+    # Validate event datetime is in the future
+    if event_dict['event_datetime'] < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Event date and time must be in the future"
+        )
 
     # Calculate end_time from event_datetime + duration
     end_time = event_dict['event_datetime'] + timedelta(minutes=event_dict['duration'])
@@ -344,20 +352,28 @@ async def approve_event(
         ).first()
 
         if not existing_block:
-            # Create room schedule block for approved event
-            schedule_block = RoomSchedule(
-                room_id=event.room_id,
-                title=event.title,
-                description=event.description,
-                block_type=BlockType.EVENT,
-                start_time=event.event_datetime.time(),
-                end_time=event.end_time.time(),
-                is_recurring=False,
-                specific_date=event.event_datetime.date(),
-                event_id=event.id,
-                created_by=current_user.id
-            )
-            db.add(schedule_block)
+            # Convert UTC to Istanbul time (UTC+3) for schedule display
+            ISTANBUL_OFFSET = timedelta(hours=3)
+            event_time_istanbul = event.event_datetime + ISTANBUL_OFFSET
+            end_time_istanbul = event.end_time + ISTANBUL_OFFSET
+
+            # Only create schedule if event doesn't cross midnight
+            # (TIME field can't handle next-day times)
+            if end_time_istanbul.date() == event_time_istanbul.date():
+                # Create room schedule block for approved event
+                schedule_block = RoomSchedule(
+                    room_id=event.room_id,
+                    title=event.title,
+                    description=event.description,
+                    block_type=BlockType.EVENT,
+                    start_time=event_time_istanbul.time(),
+                    end_time=end_time_istanbul.time(),
+                    is_recurring=False,
+                    specific_date=event.event_datetime.date(),  # Keep UTC date for matching
+                    event_id=event.id,
+                    created_by=current_user.id
+                )
+                db.add(schedule_block)
 
     # LIFECYCLE HOOK: Remove from room schedule when rejected
     elif approval_data.status == EventStatus.REJECTED:
@@ -368,6 +384,34 @@ async def approve_event(
 
     db.commit()
     db.refresh(event)
+
+    # Send notification to event creator (club manager)
+    if approval_data.status == EventStatus.APPROVED:
+        notification = Notification(
+            user_id=event.club.manager_id,
+            event_id=event.id,
+            title="Event Approved",
+            message=f"Your event '{event.title}' has been approved and is now open for registration!",
+            notification_type=NotificationType.EVENT_APPROVED,
+            read=False
+        )
+        db.add(notification)
+    elif approval_data.status == EventStatus.REJECTED:
+        rejection_msg = f"Your event '{event.title}' has been rejected."
+        if event.rejection_reason:
+            rejection_msg += f" Reason: {event.rejection_reason}"
+
+        notification = Notification(
+            user_id=event.club.manager_id,
+            event_id=event.id,
+            title="Event Rejected",
+            message=rejection_msg,
+            notification_type=NotificationType.EVENT_REJECTED,
+            read=False
+        )
+        db.add(notification)
+
+    db.commit()
 
     return event
 

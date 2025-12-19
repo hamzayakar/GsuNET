@@ -50,10 +50,9 @@ const ClubDetail = () => {
         const clubMemberIds = clubData.members?.map(m => m.id) || [];
         setIsMember(clubMemberIds.includes(user.id));
 
-        // Check if user is a manager or advisor of this club
+        // Check if user is a manager or advisor of this club (admins cannot approve join requests)
         const userIsManager = clubData.manager_id === user.id ||
-                              clubData.advisor_id === user.id ||
-                              user.role === 'admin';
+                              clubData.advisor_id === user.id;
         setIsManager(userIsManager);
 
         // Get user's join request status for this club
@@ -111,8 +110,12 @@ const ClubDetail = () => {
   };
 
   const handleRequestJoin = async () => {
+    const message = prompt(t('enterJoinRequestMessage') || 'Why would you like to join this club? (Optional)');
+    // Allow empty message (user can click OK without typing)
+    if (message === null) return; // User clicked cancel
+
     try {
-      const response = await clubJoinRequestsAPI.create(parseInt(id));
+      const response = await clubJoinRequestsAPI.create(parseInt(id), message || undefined);
       setJoinRequest(response);
       toast.success(t('joinRequestSent'));
     } catch (err) {
@@ -187,7 +190,7 @@ const ClubDetail = () => {
             <div className="flex gap-2">
               {isManager ? (
                 <span className="px-6 py-2 rounded-md font-medium bg-purple-100 text-purple-800">
-                  {club.manager_id === user.id ? t('clubManager') : club.advisor_id === user.id ? t('advisor') : t('admin')}
+                  {club.manager_id === user.id ? t('clubManager') : t('advisor')}
                 </span>
               ) : isMember ? (
                 <span className="px-6 py-2 rounded-md font-medium bg-blue-100 text-blue-800">
