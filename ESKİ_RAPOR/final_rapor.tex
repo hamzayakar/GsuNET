@@ -1861,1233 +1861,262 @@ Tüm arayüz metinleri, form etiketleri, buton isimleri ve bildirimler dinamik o
 
 \section{Mimari Tasarım}
 
-GSUNET projesi, modern web uygulamaları için endüstri standardı olan \textbf{Client-Server Architecture} ve \textbf{Three-Tier Architecture (Üç Katmanlı Mimari)} desenlerini benimsemektedir. Sistem, frontend ve backend olmak üzere iki ana bileşenden oluşur ve bu bileşenler HTTP protokolü üzerinden REST API aracılığıyla iletişim kurar.
+GSUNET, \textbf{Client-Server} ve \textbf{Three-Tier Architecture} desenlerini kullanır. Frontend (React SPA) ve backend (FastAPI) HTTP/JSON üzerinden iletişim kurar.
 
-\subsection{Genel Mimari Desen}
-
-\textbf{1. Client-Server Modeli:}
-\begin{itemize}
-    \item \textbf{Client (İstemci):} React.js tabanlı Single Page Application (SPA) - Kullanıcı arayüzü ve sunum mantığı
-    \item \textbf{Server (Sunucu):} FastAPI tabanlı RESTful API - İş mantığı ve veri yönetimi
-    \item \textbf{İletişim Protokolü:} HTTP/HTTPS üzerinden JSON formatında veri alışverişi
-\end{itemize}
-
-\textbf{2. Three-Tier (Üç Katmanlı) Mimari:}
-
-\begin{enumerate}
-    \item \textbf{Presentation Layer (Sunum Katmanı):}
-    \begin{itemize}
-        \item React 19.x ile geliştirilmiş web kullanıcı arayüzü
-        \item Vite build tool ile optimizasyon
-        \item TailwindCSS ile responsive tasarım
-        \item React Router ile sayfa yönetimi
-        \item Axios ile HTTP istekleri
-    \end{itemize}
-
-    \item \textbf{Business Logic Layer (İş Mantığı Katmanı):}
-    \begin{itemize}
-        \item FastAPI framework ile RESTful API endpoints
-        \item JWT tabanlı kimlik doğrulama ve yetkilendirme
-        \item Role-based access control (RBAC)
-        \item Pydantic ile veri doğrulama
-        \item ARQ worker ile arka plan görevleri
-    \end{itemize}
-
-    \item \textbf{Data Access Layer (Veri Erişim Katmanı):}
-    \begin{itemize}
-        \item SQLAlchemy ORM ile veritabanı soyutlaması
-        \item PostgreSQL 15 ilişkisel veritabanı
-        \item Redis cache ve mesaj kuyruğu
-        \item Database migration yönetimi (Alembic)
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Bileşen Mimarisi}
-
-\textbf{Backend Bileşenleri:}
-
-\begin{enumerate}
-    \item \textbf{API Router Layer:}
-    \begin{itemize}
-        \item \texttt{app/routes/auth.py} - Kimlik doğrulama endpoints
-        \item \texttt{app/routes/events.py} - Etkinlik yönetimi endpoints
-        \item \texttt{app/routes/clubs.py} - Kulüp yönetimi endpoints
-        \item \texttt{app/routes/rooms.py} - Oda yönetimi endpoints
-        \item \texttt{app/routes/schedule.py} - Program yönetimi endpoints
-        \item \texttt{app/routes/notifications.py} - Bildirim endpoints
-        \item \texttt{app/routes/users.py} - Kullanıcı yönetimi endpoints
-    \end{itemize}
-
-    \item \textbf{Business Logic Layer:}
-    \begin{itemize}
-        \item Authentication ve Authorization modülleri
-        \item Event validation ve approval logic
-        \item Notification distribution logic
-        \item Room scheduling ve conflict detection
-        \item Club membership management
-    \end{itemize}
-
-    \item \textbf{Data Models:}
-    \begin{itemize}
-        \item ORM models (SQLAlchemy)
-        \item Pydantic schemas (request/response validation)
-        \item Enum types (UserRole, EventStatus, NotificationType, vb.)
-    \end{itemize}
-
-    \item \textbf{Core Services:}
-    \begin{itemize}
-        \item \texttt{app/core/database.py} - Database connection pool
-        \item \texttt{app/core/redis.py} - Redis connection management
-        \item \texttt{app/core/config.py} - Configuration management
-        \item \texttt{app/core/security.py} - Password hashing, JWT token generation
-    \end{itemize}
-
-    \item \textbf{Background Processing:}
-    \begin{itemize}
-        \item \texttt{app/worker.py} - ARQ worker configuration
-        \item \texttt{app/tasks/notification\_tasks.py} - Async notification tasks
-        \item \texttt{app/tasks/scheduled\_tasks.py} - Cron jobs (event reminders)
-    \end{itemize}
-\end{enumerate}
-
-\textbf{Frontend Bileşenleri:}
-
-\begin{enumerate}
-    \item \textbf{Pages (Sayfalar):}
-    \begin{itemize}
-        \item LoginPage, RegisterPage - Giriş ve kayıt ekranları
-        \item EventsPage, MyEventsPage - Etkinlik görüntüleme ve yönetim
-        \item ClubsPage, ClubDetailPage - Kulüp keşfi ve detayları
-        \item NotificationsPage - Bildirim merkezi
-        \item AdminPanel - Sistem yönetim paneli
-        \item ApprovalPanel - Danışman onay paneli
-        \item ClubManagerDashboard - Kulüp yöneticisi paneli
-    \end{itemize}
-
-    \item \textbf{Components (Bileşenler):}
-    \begin{itemize}
-        \item Navigation components (Navbar, MobileMenu)
-        \item Form components (Input, Button, Select, Textarea)
-        \item Event components (EventCard, EventDetailModal)
-        \item Notification components (NotificationBell, NotificationItem)
-        \item Table components (DataTable, Pagination)
-    \end{itemize}
-
-    \item \textbf{Services:}
-    \begin{itemize}
-        \item API client (axios instance with interceptors)
-        \item Authentication service (token management)
-        \item LocalStorage management
-        \item Translation service (i18n)
-    \end{itemize}
-
-    \item \textbf{Context \& State Management:}
-    \begin{itemize}
-        \item AuthContext - Kullanıcı kimlik doğrulama state
-        \item LanguageContext - Çoklu dil desteği state
-        \item Global state hooks
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Deployment Mimarisi}
-
-\textbf{Containerization (Docker):}
-\begin{itemize}
-    \item \textbf{Frontend Container:} Node.js runtime, Vite dev server
-    \item \textbf{Backend Container:} Python 3.12, FastAPI + Uvicorn
-    \item \textbf{Database Container:} PostgreSQL 15
-    \item \textbf{Cache Container:} Redis 8.4
-    \item \textbf{Worker Container:} ARQ background worker
-\end{itemize}
-
-\textbf{Docker Compose Orchestration:}
-\begin{itemize}
-    \item Service dependency management
-    \item Network isolation ve inter-service communication
-    \item Volume persistence (database data, logs)
-    \item Environment variable injection
-    \item Health checks ve restart policies
-\end{itemize}
-
-\subsection{Güvenlik Mimarisi}
-
-\begin{enumerate}
-    \item \textbf{Authentication (Kimlik Doğrulama):}
-    \begin{itemize}
-        \item JWT (JSON Web Tokens) ile stateless authentication
-        \item Access token expiration (7 days)
-        \item Secure password hashing (bcrypt)
-    \end{itemize}
-
-    \item \textbf{Authorization (Yetkilendirme):}
-    \begin{itemize}
-        \item Role-Based Access Control (RBAC)
-        \item 4 rol seviyesi: Student, Club Manager, Advisor, Admin
-        \item Endpoint-level permission checks
-        \item Resource ownership validation
-    \end{itemize}
-
-    \item \textbf{Data Security:}
-    \begin{itemize}
-        \item SQL injection prevention (ORM parametrized queries)
-        \item XSS protection (React's built-in escaping)
-        \item CORS policy enforcement
-        \item HTTPS enforcement (production)
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Scalability ve Performance}
-
-\begin{itemize}
-    \item \textbf{Asynchronous Processing:} FastAPI async endpoints, ARQ background tasks
-    \item \textbf{Caching Strategy:} Redis cache for frequently accessed data
-    \item \textbf{Database Indexing:} Strategic indexes on frequently queried columns
-    \item \textbf{Connection Pooling:} Database connection reuse
-    \item \textbf{Code Splitting:} Frontend lazy loading ve chunking (Vite)
-\end{itemize}
-
-\section{Veri Tasarımı}
-
-GSUNET projesi, ilişkisel veritabanı yönetim sistemi olarak PostgreSQL 15 kullanmaktadır. Veri modeli, normalleştirilmiş tablolar ve ilişkiler üzerine kurulmuştur.
-
-\subsection{Veri Tabanı Şeması}
-
-Sistemde toplam \textbf{9 ana tablo} ve \textbf{1 ilişki tablosu (junction table)} bulunmaktadır:
-
-\subsubsection{1. Users Tablosu}
-
-Kullanıcı bilgilerini ve kimlik doğrulama verilerini saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer, Auto-increment)
-    \item \texttt{student\_number} - Öğrenci numarası (String, Unique, Nullable)
-    \item \texttt{full\_name} - Ad soyad (String, Not Null)
-    \item \texttt{email} - E-posta adresi (String, Unique, Not Null, Indexed)
-    \item \texttt{password\_hash} - Şifrelenmiş parola (String, Not Null)
-    \item \texttt{role} - Kullanıcı rolü (Enum: student, club\_manager, advisor, admin)
-    \item \texttt{department} - Bölüm bilgisi (String, Nullable)
-    \item \texttt{created\_at} - Oluşturulma zamanı (Timestamp with timezone)
-    \item \texttt{updated\_at} - Güncellenme zamanı (Timestamp with timezone)
-\end{itemize}
-
-\textbf{İlişkiler:}
-\begin{itemize}
-    \item One-to-Many: Users $\rightarrow$ EventRegistrations
-    \item One-to-Many: Users $\rightarrow$ Notifications
-    \item One-to-Many: Users $\rightarrow$ Clubs (managed clubs)
-    \item Many-to-Many: Users $\leftrightarrow$ Clubs (followed clubs via junction table)
-\end{itemize}
-
-\subsubsection{2. Clubs Tablosu}
-
-Kulüp/organizasyon bilgilerini saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer)
-    \item \texttt{name} - Kulüp adı (String, Unique, Indexed)
-    \item \texttt{description} - Açıklama (Text, Nullable)
-    \item \texttt{contact\_email} - İletişim e-postası (String, Nullable)
-    \item \texttt{manager\_id} - Foreign Key $\rightarrow$ Users (SET NULL)
-    \item \texttt{advisor\_id} - Foreign Key $\rightarrow$ Users (SET NULL)
-    \item \texttt{created\_at} - Oluşturulma zamanı (Timestamp)
-    \item \texttt{updated\_at} - Güncellenme zamanı (Timestamp)
-\end{itemize}
-
-\textbf{İlişkiler:}
-\begin{itemize}
-    \item Many-to-One: Clubs $\rightarrow$ Users (manager)
-    \item Many-to-One: Clubs $\rightarrow$ Users (advisor)
-    \item One-to-Many: Clubs $\rightarrow$ Events
-    \item One-to-Many: Clubs $\rightarrow$ Sponsorships
-    \item Many-to-Many: Clubs $\leftrightarrow$ Users (followers)
-\end{itemize}
-
-\subsubsection{3. Events Tablosu}
-
-Etkinlik bilgilerini ve durumlarını saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer)
-    \item \texttt{title} - Etkinlik başlığı (String, Not Null)
-    \item \texttt{description} - Açıklama (Text, Nullable)
-    \item \texttt{event\_datetime} - Başlangıç tarihi ve saati (Timestamp, Indexed)
-    \item \texttt{duration} - Süre (dakika) (Integer, 30-360 arası)
-    \item \texttt{end\_time} - Bitiş zamanı (Timestamp, hesaplanmış)
-    \item \texttt{location} - Konum bilgisi (String, Nullable)
-    \item \texttt{expected\_capacity} - Beklenen katılımcı sayısı (Integer, Nullable)
-    \item \texttt{max\_capacity} - Maksimum kapasite (Integer, Nullable)
-    \item \texttt{status} - Etkinlik durumu (Enum: pending, approved, rejected, cancelled, completed)
-    \item \texttt{rejection\_reason} - Red nedeni (Text, Nullable)
-    \item \texttt{members\_only} - Sadece üyelere açık mı? (Boolean)
-    \item \texttt{club\_id} - Foreign Key $\rightarrow$ Clubs (CASCADE)
-    \item \texttt{room\_id} - Foreign Key $\rightarrow$ Rooms (SET NULL)
-    \item \texttt{approved\_by\_id} - Foreign Key $\rightarrow$ Users (SET NULL)
-    \item \texttt{created\_at}, \texttt{updated\_at} - Timestamp alanları
-\end{itemize}
-
-\textbf{Constraints (Kısıtlamalar):}
-\begin{itemize}
-    \item \texttt{expected\_capacity > 0}
-    \item \texttt{max\_capacity > 0}
-    \item \texttt{expected\_capacity <= max\_capacity}
-    \item \texttt{duration >= 30 AND duration <= 360}
-    \item Composite Index: (club\_id, status)
-    \item Composite Index: (status, event\_datetime)
-\end{itemize}
-
-\textbf{İlişkiler:}
-\begin{itemize}
-    \item Many-to-One: Events $\rightarrow$ Clubs
-    \item Many-to-One: Events $\rightarrow$ Rooms
-    \item Many-to-One: Events $\rightarrow$ Users (approved\_by)
-    \item One-to-Many: Events $\rightarrow$ EventRegistrations
-    \item One-to-Many: Events $\rightarrow$ Notifications
-    \item One-to-One: Events $\rightarrow$ RoomSchedule
-\end{itemize}
-
-\subsubsection{4. Rooms Tablosu}
-
-Oda/mekan bilgilerini saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer)
-    \item \texttt{name} - Oda adı (String, Unique)
-    \item \texttt{description} - Açıklama (Text, Nullable)
-    \item \texttt{capacity} - Kapasite (Integer, > 0)
-    \item \texttt{location} - Konum (String, Nullable)
-    \item \texttt{features} - Özellikler (Text/JSON, Nullable)
-    \item \texttt{is\_available} - Kullanılabilir mi? (Boolean)
-\end{itemize}
-
-\textbf{Constraints:}
-\begin{itemize}
-    \item \texttt{capacity > 0}
-    \item Composite Index: (is\_available, capacity)
-\end{itemize}
-
-\textbf{İlişkiler:}
-\begin{itemize}
-    \item One-to-Many: Rooms $\rightarrow$ Events
-    \item One-to-Many: Rooms $\rightarrow$ RoomSchedules
-\end{itemize}
-
-\subsubsection{5. RoomSchedule Tablosu}
-
-Oda rezervasyon ve blok zamanlarını saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer)
-    \item \texttt{room\_id} - Foreign Key $\rightarrow$ Rooms (CASCADE)
-    \item \texttt{event\_id} - Foreign Key $\rightarrow$ Events (CASCADE, Nullable, Unique)
-    \item \texttt{start\_time} - Başlangıç zamanı (Timestamp)
-    \item \texttt{end\_time} - Bitiş zamanı (Timestamp)
-    \item \texttt{block\_type} - Blok tipi (Enum: event, maintenance, reserved)
-    \item \texttt{description} - Açıklama (Text, Nullable)
-    \item \texttt{created\_by\_id} - Foreign Key $\rightarrow$ Users (SET NULL)
-    \item \texttt{created\_at} - Oluşturulma zamanı (Timestamp)
-\end{itemize}
-
-\textbf{Constraints:}
-\begin{itemize}
-    \item \texttt{end\_time > start\_time}
-    \item Composite Index: (room\_id, start\_time, end\_time)
-\end{itemize}
-
-\subsubsection{6. EventRegistration Tablosu}
-
-Kullanıcı-etkinlik kayıt ilişkilerini saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer)
-    \item \texttt{user\_id} - Foreign Key $\rightarrow$ Users (CASCADE)
-    \item \texttt{event\_id} - Foreign Key $\rightarrow$ Events (CASCADE)
-    \item \texttt{registered\_at} - Kayıt zamanı (Timestamp)
-\end{itemize}
-
-\textbf{Constraints:}
-\begin{itemize}
-    \item Unique constraint: (user\_id, event\_id) - Bir kullanıcı aynı etkinliğe birden fazla kayıt olamaz
-\end{itemize}
-
-\subsubsection{7. Notifications Tablosu}
-
-Kullanıcı bildirimlerini saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer)
-    \item \texttt{title} - Bildirim başlığı (String, Not Null)
-    \item \texttt{message} - Bildirim mesajı (Text, Not Null)
-    \item \texttt{notification\_type} - Bildirim tipi (Enum: event\_created, event\_updated, event\_cancelled, event\_reminder, event\_approved, event\_rejected, club\_update, sponsorship\_update)
-    \item \texttt{read} - Okundu mu? (Boolean, Default: False)
-    \item \texttt{user\_id} - Foreign Key $\rightarrow$ Users (CASCADE)
-    \item \texttt{event\_id} - Foreign Key $\rightarrow$ Events (CASCADE, Nullable)
-    \item \texttt{created\_at} - Oluşturulma zamanı (Timestamp)
-\end{itemize}
-
-\subsubsection{8. ClubJoinRequest Tablosu}
-
-Kulübe katılma taleplerini saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer)
-    \item \texttt{user\_id} - Foreign Key $\rightarrow$ Users (CASCADE)
-    \item \texttt{club\_id} - Foreign Key $\rightarrow$ Clubs (CASCADE)
-    \item \texttt{status} - Talep durumu (Enum: pending, approved, rejected)
-    \item \texttt{created\_at} - Talep zamanı (Timestamp)
-    \item \texttt{updated\_at} - Güncellenme zamanı (Timestamp)
-\end{itemize}
-
-\textbf{Constraints:}
-\begin{itemize}
-    \item Unique constraint: (user\_id, club\_id) - Aynı kullanıcı aynı kulübe birden fazla talep gönderemez
-\end{itemize}
-
-\subsubsection{9. Sponsorships Tablosu}
-
-Sponsorluk anlaşmalarını saklar.
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{id} - Primary Key (Integer)
-    \item \texttt{club\_id} - Foreign Key $\rightarrow$ Clubs (CASCADE)
-    \item \texttt{sponsor\_name} - Sponsor adı (String, Not Null)
-    \item \texttt{sponsor\_description} - Açıklama (Text, Nullable)
-    \item \texttt{amount} - Miktar (Decimal, Nullable)
-    \item \texttt{start\_date} - Başlangıç tarihi (Date)
-    \item \texttt{end\_date} - Bitiş tarihi (Date)
-    \item \texttt{status} - Durum (Enum: active, expired, pending)
-    \item \texttt{created\_at}, \texttt{updated\_at} - Timestamp alanları
-\end{itemize}
-
-\subsubsection{10. user\_club\_association Tablosu (Junction Table)}
-
-Kullanıcı ve kulüpler arasında many-to-many ilişkisi sağlar (takip edilen kulüpler).
-
-\textbf{Alanlar:}
-\begin{itemize}
-    \item \texttt{user\_id} - Foreign Key $\rightarrow$ Users (CASCADE)
-    \item \texttt{club\_id} - Foreign Key $\rightarrow$ Clubs (CASCADE)
-\end{itemize}
-
-\subsection{Entity-Relationship (ER) Diyagramı}
-
-Tablolar arası ilişkiler:
-
-\begin{enumerate}
-    \item \textbf{Users $\leftrightarrow$ Clubs:}
-    \begin{itemize}
-        \item Many-to-Many (Followers): user\_club\_association junction table üzerinden
-        \item One-to-Many (Manager): Her kulüp bir yöneticiye sahip
-        \item One-to-Many (Advisor): Her kulüp bir danışmana sahip
-    \end{itemize}
-
-    \item \textbf{Clubs $\rightarrow$ Events:}
-    \begin{itemize}
-        \item One-to-Many: Her kulüp birden fazla etkinlik oluşturabilir
-        \item Cascade Delete: Kulüp silinirse etkinlikleri de silinir
-    \end{itemize}
-
-    \item \textbf{Events $\rightarrow$ EventRegistrations $\leftarrow$ Users:}
-    \begin{itemize}
-        \item Many-to-Many through EventRegistration
-        \item Bir etkinliğe birden fazla kullanıcı kayıt olabilir
-        \item Bir kullanıcı birden fazla etkinliğe kayıt olabilir
-    \end{itemize}
-
-    \item \textbf{Events $\leftrightarrow$ Rooms:}
-    \begin{itemize}
-        \item Many-to-One: Bir etkinlik bir odada gerçekleşir
-        \item One-to-One: Events $\leftrightarrow$ RoomSchedule (schedule block)
-    \end{itemize}
-
-    \item \textbf{Users $\rightarrow$ Notifications:}
-    \begin{itemize}
-        \item One-to-Many: Her kullanıcının birden fazla bildirimi olabilir
-        \item Cascade Delete: Kullanıcı silinirse bildirimleri de silinir
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Veri Bütünlüğü (Data Integrity)}
-
-\begin{itemize}
-    \item \textbf{Referential Integrity:} Foreign key constraints ile sağlanır
-    \item \textbf{Check Constraints:} Kapasite, süre, tarih kontrolü gibi iş kuralları veritabanı seviyesinde uygulanır
-    \item \textbf{Unique Constraints:} Email, öğrenci numarası, kulüp adı gibi alanlar unique olarak tanımlanmıştır
-    \item \textbf{Cascade Rules:}
-    \begin{itemize}
-        \item ON DELETE CASCADE: İlişkili kayıtlar silinir (event $\rightarrow$ registrations)
-        \item ON DELETE SET NULL: İlişki korunur ancak referans temizlenir (club $\rightarrow$ advisor)
-    \end{itemize}
-    \item \textbf{Indexes:} Sık sorgulanan sütunlarda performans optimizasyonu için index'ler kullanılmıştır
-\end{itemize}
-
-\subsection{NoSQL Veri Yapıları (Redis)}
-
-Redis, cache ve message queue için kullanılmaktadır:
-
-\begin{itemize}
-    \item \textbf{Job Queue:} ARQ background tasks için Redis lists/streams kullanılır
-    \item \textbf{Task Results:} Job sonuçları 1 saat boyunca saklanır
-    \item \textbf{Cache Keys:} Sık erişilen veriler için key-value cache (örn: frequently accessed events, user sessions)
-\end{itemize}
-
-\section{Kullanıcı Arayüzleri}
-
-GSUNET projesi, rol tabanlı dinamik kullanıcı arayüzü sağlamaktadır. Her kullanıcı rolü (Student, Club Manager, Advisor, Admin) farklı sayfalara ve özelliklere erişim hakkına sahiptir.
-
-\subsection{Navigasyon Yapısı}
-
-\textbf{Ana Navigasyon Menüsü:}
-
-Sistemde iki tür navigasyon bulunur:
-\begin{enumerate}
-    \item \textbf{Desktop Navigation Bar:} Üst kısımda yer alan horizontal menü
-    \item \textbf{Mobile Navigation Menu:} Hamburger menü ile açılan responsive menü
-\end{enumerate}
-
-\textbf{Rol Bazlı Menü Öğeleri:}
-
-\begin{itemize}
-    \item \textbf{Tüm Kullanıcılar (Public):}
-    \begin{itemize}
-        \item Login - Giriş yapma sayfası
-        \item Register - Kayıt olma sayfası
-    \end{itemize}
-
-    \item \textbf{Authenticated Users (Giriş Yapmış):}
-    \begin{itemize}
-        \item Home/Events - Etkinlikler listesi
-        \item My Events - Kayıtlı olduğum etkinlikler
-        \item Clubs - Kulüpler sayfası
-        \item Notifications - Bildirimler (badge ile okunmamış sayısı)
-        \item Profile dropdown - Profil ve çıkış işlemleri
-        \item Language selector - Dil seçimi (TR/EN/FR)
-    \end{itemize}
-
-    \item \textbf{Club Manager:}
-    \begin{itemize}
-        \item Yukarıdakilere ek olarak:
-        \item Club Dashboard - Kulüp yönetim paneli
-        \item Create Event - Etkinlik oluşturma
-        \item My Club - Kulüp detayları ve üye yönetimi
-    \end{itemize}
-
-    \item \textbf{Advisor:}
-    \begin{itemize}
-        \item Yukarıdakilere ek olarak:
-        \item Approval Panel - Etkinlik onay paneli
-        \item View pending events - Onay bekleyen etkinlikler
-    \end{itemize}
-
-    \item \textbf{Admin:}
-    \begin{itemize}
-        \item Yukarıdakilere ek olarak:
-        \item Admin Panel - Sistem yönetim paneli
-        \begin{itemize}
-            \item Users Management - Kullanıcı yönetimi
-            \item Clubs Management - Kulüp yönetimi
-            \item Rooms Management - Oda yönetimi
-            \item Schedule Management - Program yönetimi
-        \end{itemize}
-    \end{itemize}
-\end{itemize}
-
-\subsection{Sayfa Akış Diyagramı}
-
-\textbf{1. Authentication Flow (Kimlik Doğrulama Akışı):}
-
-\begin{verbatim}
-Landing Page
-    ├─> Login Page
-    │   ├─> [Success] → Events Page (Home)
-    │   └─> [Forgot Password] → Password Reset Page
-    └─> Register Page
-        └─> [Success] → Login Page
-\end{verbatim}
-
-\textbf{2. Student User Flow:}
-
-\begin{verbatim}
-Home (Events)
-    ├─> Event Detail Modal
-    │   ├─> Register for Event
-    │   └─> View Event Info
-    ├─> Clubs Page
-    │   ├─> Club Detail Page
-    │   │   ├─> Follow Club
-    │   │   ├─> Request to Join
-    │   │   └─> View Club Events
-    │   └─> Filter/Search Clubs
-    ├─> My Events
-    │   ├─> View Registered Events
-    │   └─> Unregister from Event
-    └─> Notifications
-        ├─> View All Notifications
-        ├─> Mark as Read
-        └─> Navigate to Related Event/Club
-\end{verbatim}
-
-\textbf{3. Club Manager Flow:}
-
-\begin{verbatim}
-Club Manager Dashboard
-    ├─> Create Event
-    │   ├─> Fill Event Form
-    │   ├─> Select Room
-    │   ├─> Set Capacity
-    │   └─> Submit for Approval
-    ├─> Manage My Events
-    │   ├─> View Event Status
-    │   ├─> Edit Pending Event
-    │   ├─> Cancel Event
-    │   └─> View Registrations
-    ├─> Manage Club Members
-    │   ├─> View Join Requests
-    │   ├─> Approve/Reject Requests
-    │   └─> View Current Members
-    └─> Club Profile
-        ├─> Edit Club Info
-        └─> Manage Sponsorships
-\end{verbatim}
-
-\textbf{4. Advisor Flow:}
-
-\begin{verbatim}
-Approval Panel
-    ├─> View Pending Events
-    ├─> Event Detail Review
-    │   ├─> Approve Event
-    │   ├─> Reject Event (with reason)
-    │   └─> View Club Info
-    └─> View All Events
-        └─> Filter by Status/Club
-\end{verbatim}
-
-\textbf{5. Admin Flow:}
-
-\begin{verbatim}
-Admin Panel
-    ├─> Users Management Tab
-    │   ├─> View All Users
-    │   ├─> Filter Users (by role, department)
-    │   ├─> Edit User Role
-    │   └─> Delete User
-    ├─> Clubs Management Tab
-    │   ├─> Create New Club
-    │   ├─> Edit Club
-    │   ├─> Assign Manager/Advisor
-    │   └─> Delete Club
-    ├─> Rooms Management Tab
-    │   ├─> Create New Room
-    │   ├─> Edit Room (name, capacity, features)
-    │   ├─> Toggle Room Availability
-    │   └─> View Room Schedule
-    └─> Schedule Management Tab
-        ├─> View Weekly Schedule
-        ├─> Select Week (previous/next)
-        ├─> View Room Availability
-        ├─> Create Manual Block
-        └─> View Conflicts
-\end{verbatim}
-
-\subsection{UI State Management}
-
-\textbf{Global State:}
-\begin{itemize}
-    \item \textbf{Authentication State:} Kullanıcı giriş durumu, token, user info
-    \item \textbf{Language State:} Seçili dil (TR/EN/FR)
-    \item \textbf{Notification State:} Okunmamış bildirim sayısı, bildirim listesi
-\end{itemize}
-
-\textbf{Local State (Per Page):}
-\begin{itemize}
-    \item Form inputs
-    \item Modal visibility
-    \item Loading states
-    \item Error messages
-    \item Pagination state
-    \item Filter/search criteria
-\end{itemize}
-
-\subsection{Responsive Tasarım}
-
-GSUNET, mobile-first yaklaşımı ile tasarlanmıştır:
-
-\textbf{Breakpoints:}
-\begin{itemize}
-    \item \textbf{Mobile:} < 768px
-    \begin{itemize}
-        \item Hamburger menü
-        \item Single column layout
-        \item Stack form elements
-        \item Full-width modals
-    \end{itemize}
-
-    \item \textbf{Tablet:} 768px - 1024px
-    \begin{itemize}
-        \item Horizontal navigation
-        \item 2-column layouts
-        \item Responsive tables (scroll)
-    \end{itemize}
-
-    \item \textbf{Desktop:} > 1024px
-    \begin{itemize}
-        \item Full navigation bar
-        \item Multi-column layouts
-        \item Larger modals
-        \item Data tables with all columns
-    \end{itemize}
-\end{itemize}
-
-\subsection{UI Components Library}
-
-Projede kullanılan temel UI bileşenleri:
-
-\begin{enumerate}
-    \item \textbf{Form Components:}
-    \begin{itemize}
-        \item Input fields (text, email, password, number, date, time)
-        \item Textarea (multi-line text)
-        \item Select dropdowns
-        \item Checkbox ve Radio buttons
-        \item Date/Time pickers
-    \end{itemize}
-
-    \item \textbf{Navigation Components:}
-    \begin{itemize}
-        \item Navbar (desktop)
-        \item MobileMenu (hamburger)
-        \item Breadcrumbs
-        \item Tabs (Admin panel)
-    \end{itemize}
-
-    \item \textbf{Data Display Components:}
-    \begin{itemize}
-        \item Event Cards (grid layout)
-        \item Club Cards
-        \item Data Tables (sortable, filterable)
-        \item Pagination controls
-        \item Badge (notification count)
-    \end{itemize}
-
-    \item \textbf{Feedback Components:}
-    \begin{itemize}
-        \item Toast notifications (react-hot-toast)
-        \item Loading spinners
-        \item Error messages
-        \item Success messages
-        \item Confirmation modals
-    \end{itemize}
-
-    \item \textbf{Modal Components:}
-    \begin{itemize}
-        \item Event Detail Modal
-        \item Create/Edit Forms Modal
-        \item Confirmation Dialog
-        \item Image preview modal
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Accessibility (Erişilebilirlik)}
-
-\begin{itemize}
-    \item \textbf{Keyboard Navigation:} Tab, Enter, Escape key support
-    \item \textbf{ARIA Labels:} Screen reader uyumlu etiketler
-    \item \textbf{Focus Management:} Modal açılışlarında focus yönetimi
-    \item \textbf{Color Contrast:} WCAG 2.1 AA standartlarına uygun kontrast oranları
-    \item \textbf{Form Validation:} Anlaşılır hata mesajları
-\end{itemize}
-
-\subsection{Internationalization (Çoklu Dil Desteği)}
-
-Kullanıcı arayüzünde 3 dil desteklenmektedir:
-
-\begin{itemize}
-    \item \textbf{Türkçe (TR):} Ana dil, tüm metinler Türkçe
-    \item \textbf{English (EN):} İkinci dil, tam destek
-    \item \textbf{Français (FR):} Üçüncü dil, tam destek
-\end{itemize}
-
-\textbf{Çeviri Yapılan Bileşenler:}
-\begin{itemize}
-    \item Navigation menu items
-    \item Page titles ve headings
-    \item Form labels ve placeholders
-    \item Button texts
-    \item Error ve success messages
-    \item Notification messages
-    \item Table headers
-    \item Modal titles ve content
-\end{itemize}
-
-Dil seçimi navigation bar'da yer alan language selector ile yapılır ve seçim localStorage'da saklanır.
-
-\section{Kullanılan Kütüphaneler ve Araçlar}
-
-GSUNET projesi, modern web teknolojileri ve endüstri standardı araçlar kullanılarak geliştirilmiştir.
-
-\subsection{Programlama Dilleri}
-
-\begin{enumerate}
-    \item \textbf{Python 3.12}
-    \begin{itemize}
-        \item Backend API geliştirme
-        \item Asenkron programlama (async/await)
-        \item Type hints ile tip güvenliği
-    \end{itemize}
-
-    \item \textbf{JavaScript (ES6+)}
-    \begin{itemize}
-        \item Frontend geliştirme
-        \item React component development
-        \item Async operations (Promises, async/await)
-    \end{itemize}
-
-    \item \textbf{SQL}
-    \begin{itemize}
-        \item Database query optimization
-        \item Complex joins ve aggregations
-        \item Database schema design
-    \end{itemize}
-
-    \item \textbf{HTML5 \& CSS3}
-    \begin{itemize}
-        \item Semantic HTML
-        \item Modern CSS features (Flexbox, Grid)
-        \item Responsive design
-    \end{itemize}
-\end{enumerate}
-
-\subsection{Backend Framework ve Kütüphaneler}
-
-\subsubsection{Core Framework}
-
-\begin{itemize}
-    \item \textbf{FastAPI 0.104.1}
-    \begin{itemize}
-        \item Modern, high-performance web framework
-        \item Automatic API documentation (OpenAPI/Swagger)
-        \item Built-in validation (Pydantic)
-        \item Asynchronous request handling
-        \item Dependency injection system
-    \end{itemize}
-
-    \item \textbf{Uvicorn 0.24.0}
-    \begin{itemize}
-        \item ASGI server
-        \item High-performance async support
-        \item WebSocket support
-        \item Hot reload for development
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Database \& ORM}
-
-\begin{itemize}
-    \item \textbf{SQLAlchemy 2.0.23}
-    \begin{itemize}
-        \item Object-Relational Mapping (ORM)
-        \item Database abstraction layer
-        \item Query builder
-        \item Relationship management
-        \item Migration support
-    \end{itemize}
-
-    \item \textbf{PostgreSQL 15}
-    \begin{itemize}
-        \item Relational database system
-        \item ACID compliance
-        \item Advanced indexing
-        \item Full-text search capabilities
-        \item JSON support
-    \end{itemize}
-
-    \item \textbf{psycopg2-binary 2.9.9}
-    \begin{itemize}
-        \item PostgreSQL adapter for Python
-        \item Connection pooling
-        \item Prepared statements
-    \end{itemize}
-
-    \item \textbf{Alembic 1.12.1}
-    \begin{itemize}
-        \item Database migration tool
-        \item Version control for schema
-        \item Automatic migration generation
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Authentication \& Security}
-
-\begin{itemize}
-    \item \textbf{python-jose[cryptography] 3.3.0}
-    \begin{itemize}
-        \item JWT (JSON Web Tokens) implementation
-        \item Token encoding/decoding
-        \item Cryptographic signing
-    \end{itemize}
-
-    \item \textbf{passlib[bcrypt] 1.7.4}
-    \begin{itemize}
-        \item Password hashing library
-        \item Bcrypt algorithm support
-        \item Secure password storage
-    \end{itemize}
-
-    \item \textbf{bcrypt 4.1.2}
-    \begin{itemize}
-        \item Cryptographic hash function
-        \item Salt generation
-        \item Password verification
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Data Validation}
-
-\begin{itemize}
-    \item \textbf{Pydantic 2.5.0}
-    \begin{itemize}
-        \item Data validation using Python type hints
-        \item Automatic schema generation
-        \item Settings management
-        \item JSON serialization/deserialization
-    \end{itemize}
-
-    \item \textbf{pydantic-settings 2.1.0}
-    \begin{itemize}
-        \item Environment variable management
-        \item Configuration validation
-        \item .env file support
-    \end{itemize}
-
-    \item \textbf{email-validator 2.1.0}
-    \begin{itemize}
-        \item Email address validation
-        \item RFC 5322 compliance
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Background Tasks \& Caching}
-
-\begin{itemize}
-    \item \textbf{Redis 8.4.0}
-    \begin{itemize}
-        \item In-memory data structure store
-        \item Message queue backend
-        \item Caching layer
-        \item Pub/Sub messaging
-    \end{itemize}
-
-    \item \textbf{redis-py 5.0.1}
-    \begin{itemize}
-        \item Python client for Redis
-        \item Connection pooling
-        \item Async support
-    \end{itemize}
-
-    \item \textbf{ARQ 0.26.1}
-    \begin{itemize}
-        \item Async Redis Queue
-        \item Background task processing
-        \item Cron job scheduling
-        \item Job retries ve error handling
-        \item Worker management
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Utilities}
-
-\begin{itemize}
-    \item \textbf{python-multipart 0.0.6}
-    \begin{itemize}
-        \item File upload handling
-        \item Multipart form data parsing
-    \end{itemize}
-
-    \item \textbf{python-dateutil 2.8.2}
-    \begin{itemize}
-        \item Date/time parsing ve manipulation
-        \item Timezone handling
-        \item Relative date calculations
-    \end{itemize}
-\end{itemize}
-
-\subsection{Frontend Framework ve Kütüphaneler}
-
-\subsubsection{Core Framework}
-
-\begin{itemize}
-    \item \textbf{React 19.2.0}
-    \begin{itemize}
-        \item Component-based UI library
-        \item Virtual DOM for performance
-        \item Hooks for state management
-        \item Context API for global state
-        \item React Compiler optimizations
-    \end{itemize}
-
-    \item \textbf{react-dom 19.2.0}
-    \begin{itemize}
-        \item DOM-specific React methods
-        \item Rendering engine
-        \item Event handling
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Build Tools}
-
-\begin{itemize}
-    \item \textbf{Vite 7.2.4}
-    \begin{itemize}
-        \item Next-generation frontend build tool
-        \item Lightning-fast HMR (Hot Module Replacement)
-        \item Optimized production builds
-        \item Code splitting
-        \item ES modules support
-    \end{itemize}
-
-    \item \textbf{@vitejs/plugin-react 5.1.1}
-    \begin{itemize}
-        \item React support for Vite
-        \item Fast Refresh
-        \item JSX transformation
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Styling}
-
-\begin{itemize}
-    \item \textbf{TailwindCSS 4.1.18}
-    \begin{itemize}
-        \item Utility-first CSS framework
-        \item Responsive design utilities
-        \item Custom theme configuration
-        \item PurgeCSS for production optimization
-    \end{itemize}
-
-    \item \textbf{@tailwindcss/postcss 4.1.18}
-    \begin{itemize}
-        \item PostCSS integration for Tailwind
-        \item CSS processing
-    \end{itemize}
-
-    \item \textbf{PostCSS 8.5.6}
-    \begin{itemize}
-        \item CSS transformation tool
-        \item Plugin ecosystem
-    \end{itemize}
-
-    \item \textbf{Autoprefixer 10.4.22}
-    \begin{itemize}
-        \item Automatic vendor prefixes
-        \item Cross-browser compatibility
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{HTTP Client \& Notifications}
-
-\begin{itemize}
-    \item \textbf{Axios 1.13.2}
-    \begin{itemize}
-        \item Promise-based HTTP client
-        \item Request/response interceptors
-        \item Automatic JSON transformation
-        \item Error handling
-    \end{itemize}
-
-    \item \textbf{react-hot-toast 2.4.1}
-    \begin{itemize}
-        \item Toast notification library
-        \item Customizable notifications
-        \item Promise-based API
-        \item Accessible notifications
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Routing}
-
-\begin{itemize}
-    \item \textbf{react-router-dom 7.10.1}
-    \begin{itemize}
-        \item Client-side routing
-        \item Nested routes
-        \item Route protection
-        \item Navigation hooks
-        \item URL parameter handling
-    \end{itemize}
-\end{itemize}
-
-\subsubsection{Development Tools}
-
-\begin{itemize}
-    \item \textbf{ESLint 9.39.1}
-    \begin{itemize}
-        \item JavaScript linting
-        \item Code quality enforcement
-        \item Best practices validation
-    \end{itemize}
-
-    \item \textbf{eslint-plugin-react-hooks 7.0.1}
-    \begin{itemize}
-        \item React Hooks rules enforcement
-        \item Dependency array validation
-    \end{itemize}
-
-    \item \textbf{eslint-plugin-react-refresh 0.4.24}
-    \begin{itemize}
-        \item Fast Refresh compatibility checks
-    \end{itemize}
-
-    \item \textbf{@types/react 19.2.5}
-    \begin{itemize}
-        \item TypeScript type definitions for React
-        \item IDE autocomplete support
-    \end{itemize}
-
-    \item \textbf{@types/react-dom 19.2.3}
-    \begin{itemize}
-        \item TypeScript definitions for ReactDOM
-    \end{itemize}
-\end{itemize}
-
-\subsection{DevOps \& Deployment}
-
-\begin{itemize}
-    \item \textbf{Docker 24.0+}
-    \begin{itemize}
-        \item Containerization platform
-        \item Isolated development environments
-        \item Consistent deployment
-    \end{itemize}
-
-    \item \textbf{Docker Compose 2.0+}
-    \begin{itemize}
-        \item Multi-container orchestration
-        \item Service dependency management
-        \item Network isolation
-        \item Volume management
-    \end{itemize}
-
-    \item \textbf{Git 2.x}
-    \begin{itemize}
-        \item Version control system
-        \item Distributed development
-        \item Branch management
-        \item Collaboration
-    \end{itemize}
-
-    \item \textbf{GitHub}
-    \begin{itemize}
-        \item Code hosting
-        \item Issue tracking
-        \item Pull request reviews
-        \item CI/CD integration (potential)
-    \end{itemize}
-\end{itemize}
-
-\subsection{Package Managers}
-
-\begin{itemize}
-    \item \textbf{pip 23.x}
-    \begin{itemize}
-        \item Python package installer
-        \item Virtual environment support
-        \item Requirements management
-    \end{itemize}
-
-    \item \textbf{npm 10.x}
-    \begin{itemize}
-        \item Node.js package manager
-        \item Dependency resolution
-        \item Script execution
-        \item Lock file for reproducibility
-    \end{itemize}
-\end{itemize}
-
-\subsection{Development Environment}
-
-\begin{itemize}
-    \item \textbf{Python Virtual Environment (venv)}
-    \begin{itemize}
-        \item Isolated Python environment
-        \item Dependency isolation
-        \item Version management
-    \end{itemize}
-
-    \item \textbf{Node.js 20.x}
-    \begin{itemize}
-        \item JavaScript runtime
-        \item NPM ecosystem access
-        \item ES modules support
-    \end{itemize}
-\end{itemize}
-
-\subsection{API Documentation}
-
-\begin{itemize}
-    \item \textbf{OpenAPI (Swagger) 3.0}
-    \begin{itemize}
-        \item Automatic API documentation
-        \item Interactive API testing
-        \item Schema validation
-        \item Generated by FastAPI
-        \item Available at /docs endpoint
-    \end{itemize}
-
-    \item \textbf{ReDoc}
-    \begin{itemize}
-        \item Alternative API documentation UI
-        \item Clean, responsive interface
-        \item Available at /redoc endpoint
-    \end{itemize}
-\end{itemize}
-
-\subsection{Testing Tools (Potansiyel)}
-
-Proje geliştirilirken kullanılabilecek test araçları:
-
-\begin{itemize}
-    \item \textbf{pytest} - Python unit testing
-    \item \textbf{pytest-asyncio} - Async test support
-    \item \textbf{Vitest} - Vite-native unit test framework
-    \item \textbf{React Testing Library} - Component testing
-\end{itemize}
-
-\subsection{Teknoloji Stack Özeti}
+\subsection{Katmanlı Mimari}
 
 \begin{table}[h]
 \centering
-\begin{tabular}{|l|l|}
+\small
+\begin{tabular}{|p{2.8cm}|p{3.5cm}|p{6.5cm}|}
 \hline
-\textbf{Kategori} & \textbf{Teknoloji} \\ \hline
-Frontend Framework & React 19.2.0 \\ \hline
-Frontend Build Tool & Vite 7.2.4 \\ \hline
-CSS Framework & TailwindCSS 4.1.18 \\ \hline
-Backend Framework & FastAPI 0.104.1 \\ \hline
-Database & PostgreSQL 15 \\ \hline
-ORM & SQLAlchemy 2.0.23 \\ \hline
-Cache \& Queue & Redis 8.4.0 \\ \hline
-Background Tasks & ARQ 0.26.1 \\ \hline
-Authentication & JWT (python-jose) \\ \hline
-Password Hashing & Bcrypt \\ \hline
-HTTP Client & Axios 1.13.2 \\ \hline
-Routing & React Router 7.10.1 \\ \hline
-Containerization & Docker \& Docker Compose \\ \hline
-Version Control & Git \& GitHub \\ \hline
-Programming Languages & Python 3.12, JavaScript ES6+ \\ \hline
+\textbf{Katman} & \textbf{Teknolojiler} & \textbf{Sorumluluklar} \\ \hline
+Presentation & React 19.x, Vite, TailwindCSS, React Router & UI, responsive tasarım, sayfa yönetimi, HTTP istekleri \\ \hline
+Business Logic & FastAPI, Pydantic, JWT, ARQ & RESTful API, kimlik doğrulama, RBAC, validation, background tasks \\ \hline
+Data Access & SQLAlchemy, PostgreSQL 15, Redis, Alembic & ORM, database, cache, message queue, migrations \\ \hline
 \end{tabular}
-\caption{GSUNET Teknoloji Stack Özeti}
+\caption{Üç Katmanlı Mimari}
 \end{table}
 
-%-----------------------------
+\subsection{Sistem Bileşenleri}
+
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|l|p{8.5cm}|}
+\hline
+\textbf{Katman} & \textbf{Bileşen Tipi} & \textbf{Modüller/İçerik} \\ \hline
+\multirow{5}{*}{\textbf{Backend}}
+& API Routes & auth, events, clubs, rooms, schedule, notifications, users \\ \cline{2-3}
+& Business Logic & Authentication/Authorization, event validation/approval, notification distribution, room scheduling, club management \\ \cline{2-3}
+& Data Models & SQLAlchemy ORM models, Pydantic schemas, Enum types \\ \cline{2-3}
+& Core Services & database.py, redis.py, config.py, security.py \\ \cline{2-3}
+& Background & worker.py, notification\_tasks.py, scheduled\_tasks.py (cron jobs) \\ \hline
+\multirow{4}{*}{\textbf{Frontend}}
+& Pages & Login/Register, Events/MyEvents, Clubs, Notifications, Admin/Advisor/ClubManager panels \\ \cline{2-3}
+& Components & Navigation (Navbar, Mobile), Forms (Input, Button, Select), Event/Club cards, Modals, Tables \\ \cline{2-3}
+& Services & API client (axios), Authentication, LocalStorage, i18n \\ \cline{2-3}
+& State & AuthContext, LanguageContext, Global hooks \\ \hline
+\end{tabular}
+\caption{Sistem Bileşenleri}
+\end{table}
+
+\subsection{Deployment, Güvenlik ve Performance}
+
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{Container} & \textbf{İçerik} & \textbf{Özellikler} \\ \hline
+Frontend & Node.js, Vite dev server & SPA, code splitting, HMR \\ \hline
+Backend & Python 3.12, FastAPI, Uvicorn & Async endpoints, OpenAPI docs \\ \hline
+Database & PostgreSQL 15 & ACID, indexing, relationships \\ \hline
+Cache/Queue & Redis 8.4 & Key-value cache, job queue \\ \hline
+Worker & ARQ background worker & Async tasks, cron jobs (9 AM reminders) \\ \hline
+\end{tabular}
+\caption{Docker Container Mimarisi}
+\end{table}
+
+\vspace{0.2cm}
+
+\noindent\textbf{Güvenlik:} JWT (7-day expiration), Bcrypt hashing, RBAC (4 roles), ORM query protection, XSS prevention, CORS, HTTPS
+
+\noindent\textbf{Performance:} Async processing, Redis caching, DB indexing, connection pooling, lazy loading
+
+\section{Veri Tasarımı}
+
+GSUNET, PostgreSQL 15 kullanır. Sistem \textbf{10 tablo} içerir (9 ana + 1 junction table). Tüm tablolar normalleştirilmiş formda tasarlanmıştır.
+
+\subsection{Ana Tablolar ve Şema}
+
+\begin{table}[h]
+\centering
+\tiny
+\begin{tabular}{|l|p{6cm}|p{4.5cm}|p{2cm}|}
+\hline
+\textbf{Tablo} & \textbf{Ana Alanlar} & \textbf{Foreign Keys} & \textbf{Constraints} \\ \hline
+Users & id(PK), student\_number(U), full\_name, email(U,Idx), password\_hash, role(Enum), department, timestamps & - & email unique, role enum \\ \hline
+Clubs & id(PK), name(U,Idx), description, contact\_email, timestamps & manager\_id$\rightarrow$Users, advisor\_id$\rightarrow$Users & name unique \\ \hline
+Events & id(PK), title, description, event\_datetime(Idx), duration(30-360), end\_time, location, expected/max\_capacity, status(Enum), rejection\_reason, members\_only, timestamps & club\_id$\rightarrow$Clubs(CASC), room\_id$\rightarrow$Rooms, approved\_by$\rightarrow$Users & capacity>0, duration 30-360, composite idx \\ \hline
+Rooms & id(PK), name(U), description, capacity(>0), location, features(JSON), is\_available & - & capacity>0, composite idx \\ \hline
+RoomSchedule & id(PK), start\_time, end\_time, block\_type(Enum), description, created\_at & room\_id$\rightarrow$Rooms(CASC), event\_id$\rightarrow$Events(CASC,U), created\_by$\rightarrow$Users & end>start, composite idx \\ \hline
+EventRegistration & id(PK), registered\_at & user\_id$\rightarrow$Users(CASC), event\_id$\rightarrow$Events(CASC) & unique (user,event) \\ \hline
+Notifications & id(PK), title, message, type(Enum), read(bool), created\_at & user\_id$\rightarrow$Users(CASC), event\_id$\rightarrow$Events(CASC) & type enum \\ \hline
+ClubJoinRequest & id(PK), status(Enum), timestamps & user\_id$\rightarrow$Users(CASC), club\_id$\rightarrow$Clubs(CASC) & unique (user,club) \\ \hline
+Sponsorships & id(PK), sponsor\_name, description, amount, start/end\_date, status(Enum), timestamps & club\_id$\rightarrow$Clubs(CASC) & status enum \\ \hline
+user\_club\_assoc & - & user\_id$\rightarrow$Users(CASC), club\_id$\rightarrow$Clubs(CASC) & junction table \\ \hline
+\end{tabular}
+\caption{Database Schema (PK=Primary Key, U=Unique, Idx=Index, CASC=CASCADE)}
+\end{table}
+
+\subsection{Entity Relationships ve Data Integrity}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{İlişki} & \textbf{Açıklama} \\ \hline
+Users $\leftrightarrow$ Clubs & M:N (followers via junction), 1:N (manager), 1:N (advisor) \\ \hline
+Clubs $\rightarrow$ Events & 1:N (CASCADE delete) \\ \hline
+Events $\leftrightarrow$ Users & M:N (registrations via EventRegistration) \\ \hline
+Events $\leftrightarrow$ Rooms & N:1 (events to room), 1:1 (event to schedule block) \\ \hline
+Users $\rightarrow$ Notifications & 1:N (CASCADE delete) \\ \hline
+Users/Clubs $\rightarrow$ ClubJoinRequest & N:1, unique (user,club) pair \\ \hline
+\end{tabular}
+\caption{Entity Relationships}
+\end{table}
+
+\vspace{0.2cm}
+
+\noindent\textbf{Data Integrity:} FK constraints, check constraints (capacity>0, duration 30-360, end\_time>start\_time), unique constraints (email, student\_number, club name), CASCADE/SET NULL rules, composite indexes (club\_id+status, status+event\_datetime, room\_id+start/end\_time)
+
+\noindent\textbf{Redis (NoSQL):} Job queue (ARQ tasks via lists/streams), task results (1-hour TTL), cache (events, sessions)
+
+\section{Kullanıcı Arayüzleri}
+
+GSUNET, rol tabanlı dinamik UI sağlar (4 rol: Student, Club Manager, Advisor, Admin). Desktop horizontal nav + mobile hamburger menu ile responsive tasarım.
+
+\subsection{Rol Bazlı Sayfa Erişimi}
+
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|p{11cm}|}
+\hline
+\textbf{Rol} & \textbf{Erişilebilir Sayfalar ve Özellikler} \\ \hline
+Public & Login, Register, Password Reset \\ \hline
+Student (Auth) & Events, My Events, Clubs, Club Detail, Notifications, Profile, Language (TR/EN/FR) \\ \hline
+Club Manager & Student + Club Dashboard, Create Event, My Club, Manage Members, Join Requests, Sponsorships \\ \hline
+Advisor & Student + Approval Panel, Pending Events Review, Approve/Reject with reason \\ \hline
+Admin & All + Admin Panel (Users: filter/edit role/delete, Clubs: CRUD/assign, Rooms: CRUD/availability/schedule, Schedule: weekly view/manual blocks/conflicts) \\ \hline
+\end{tabular}
+\caption{Rol Bazlı Sayfa Erişimi}
+\end{table}
+
+\subsection{Sayfa Akışları}
+
+\textbf{Auth:} Landing $\rightarrow$ Login/Register $\rightarrow$ Events (Home) | Forgot Password $\rightarrow$ Reset
+
+\textbf{Student:} Events $\rightarrow$ Detail Modal (register/view) | Clubs $\rightarrow$ Detail (follow/join request/events) | My Events (view/unregister) | Notifications (read/navigate)
+
+\textbf{Club Manager:} Dashboard $\rightarrow$ Create Event (form/room/capacity/submit) | My Events (status/edit/cancel/registrations) | Members (requests/approve-reject/view) | Profile (edit/sponsorships)
+
+\textbf{Advisor:} Approval Panel $\rightarrow$ Pending Events $\rightarrow$ Detail Review (approve/reject+reason/club info) | All Events (filter by status/club)
+
+\textbf{Admin:} Admin Panel (tabs) $\rightarrow$ Users (view/filter/edit role/delete) | Clubs (CRUD/assign manager-advisor) | Rooms (CRUD/toggle availability/schedule) | Schedule (weekly/select week/manual blocks/conflicts)
+
+\subsection{UI Design \& Teknik Özellikler}
+
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{|l|p{10.5cm}|}
+\hline
+\textbf{Kategori} & \textbf{Özellikler} \\ \hline
+State Management & Global: AuthContext (user/token), LanguageContext (TR/EN/FR), NotificationState (unread count) | Local: form inputs, modal visibility, loading, errors, pagination, filters \\ \hline
+Responsive (Mobile-first) & Mobile (<768px): hamburger menu, 1-col, stacked forms, full-width modals | Tablet (768-1024px): horizontal nav, 2-col, scrollable tables | Desktop (>1024px): full nav, multi-col, large modals, full tables \\ \hline
+Components & Forms: inputs (text/email/password/number/date/time), textarea, select, checkbox/radio, pickers | Nav: Navbar, MobileMenu, breadcrumbs, tabs | Display: Event/Club cards, tables (sortable/filterable), pagination, badges | Feedback: toasts, spinners, errors/success, modals (detail/forms/confirm) \\ \hline
+Accessibility & Keyboard nav (Tab/Enter/Esc), ARIA labels, focus management, WCAG 2.1 AA contrast, clear validation messages \\ \hline
+i18n (3 diller) & TR (ana), EN, FR - Tüm nav/titles/forms/buttons/messages/tables/modals çevrilmiş, localStorage'da saklanır \\ \hline
+\end{tabular}
+\caption{UI Design Özellikleri}
+\end{table}
+
+\section{Kullanılan Kütüphaneler ve Araçlar}
+
+\subsection{Teknoloji Stack}
+
+
+\begin{table}[h]
+\centering
+\tiny
+\begin{tabular}{|l|l|p{9cm}|}
+\hline
+\textbf{Kategori} & \textbf{Tool/Library (Version)} & \textbf{Kullanım Amacı} \\ \hline
+\multirow{4}{*}{Languages}
+& Python 3.12 & Backend API, async/await, type hints \\ \cline{2-3}
+& JavaScript ES6+ & Frontend, React components, async operations \\ \cline{2-3}
+& SQL & Database queries, joins, aggregations \\ \cline{2-3}
+& HTML5/CSS3 & Semantic markup, Flexbox/Grid, responsive design \\ \hline
+\multirow{2}{*}{Backend Core}
+& FastAPI 0.104.1 & High-performance async web framework, OpenAPI docs, Pydantic validation \\ \cline{2-3}
+& Uvicorn 0.24.0 & ASGI server, WebSocket support, hot reload \\ \hline
+\multirow{4}{*}{Database/ORM}
+& PostgreSQL 15 & Relational DB, ACID compliance, advanced indexing, JSON support \\ \cline{2-3}
+& SQLAlchemy 2.0.23 & ORM, query builder, relationship management \\ \cline{2-3}
+& psycopg2-binary 2.9.9 & PostgreSQL adapter, connection pooling \\ \cline{2-3}
+& Alembic 1.12.1 & Database migrations, schema versioning \\ \hline
+\multirow{3}{*}{Auth/Security}
+& python-jose 3.3.0 & JWT implementation, token encoding/decoding \\ \cline{2-3}
+& passlib 1.7.4 & Password hashing library \\ \cline{2-3}
+& bcrypt 4.1.2 & Cryptographic hash, salt generation \\ \hline
+\multirow{2}{*}{Validation}
+& Pydantic 2.5.0 & Data validation, schema generation, JSON serialization \\ \cline{2-3}
+& pydantic-settings 2.1.0 & Environment variable management, .env support \\ \hline
+\multirow{3}{*}{Cache/Queue}
+& Redis 8.4.0 & In-memory data store, message queue, caching \\ \cline{2-3}
+& redis-py 5.0.1 & Python client, connection pooling, async support \\ \cline{2-3}
+& ARQ 0.26.1 & Async Redis Queue, background tasks, cron jobs, worker management \\ \hline
+\multirow{2}{*}{Backend Utils}
+& python-multipart 0.0.6 & File upload handling, multipart form parsing \\ \cline{2-3}
+& python-dateutil 2.8.2 & Date/time parsing, timezone handling \\ \hline
+\end{tabular}
+\caption{Backend Teknolojileri}
+\end{table}
+
+\begin{table}[h]
+\centering
+\tiny
+\begin{tabular}{|l|l|p{9cm}|}
+\hline
+\textbf{Kategori} & \textbf{Tool/Library (Version)} & \textbf{Kullanım Amacı} \\ \hline
+\multirow{2}{*}{Core Framework}
+& React 19.2.0 & Component-based UI, virtual DOM, hooks, context API \\ \cline{2-3}
+& react-dom 19.2.0 & DOM rendering, event handling \\ \hline
+\multirow{2}{*}{Build Tools}
+& Vite 7.2.4 & Next-gen build tool, HMR, code splitting, ES modules \\ \cline{2-3}
+& @vitejs/plugin-react 5.1.1 & React Fast Refresh, JSX transformation \\ \hline
+\multirow{3}{*}{Styling}
+& TailwindCSS 4.1.18 & Utility-first CSS, responsive utilities, theme config \\ \cline{2-3}
+& PostCSS 8.5.6 & CSS transformation, plugin ecosystem \\ \cline{2-3}
+& Autoprefixer 10.4.22 & Vendor prefixes, cross-browser compatibility \\ \hline
+\multirow{2}{*}{HTTP/UI}
+& Axios 1.13.2 & HTTP client, interceptors, JSON transformation \\ \cline{2-3}
+& react-hot-toast 2.4.1 & Toast notifications, promise-based API \\ \hline
+Routing & react-router-dom 7.10.1 & Client-side routing, nested routes, route protection \\ \hline
+\multirow{4}{*}{Dev Tools}
+& ESLint 9.39.1 & JavaScript linting, code quality \\ \cline{2-3}
+& eslint-plugin-react-hooks 7.0.1 & Hooks rules enforcement \\ \cline{2-3}
+& @types/react 19.2.5 & TypeScript definitions, IDE autocomplete \\ \cline{2-3}
+& @types/react-dom 19.2.3 & TypeScript definitions for ReactDOM \\ \hline
+\end{tabular}
+\caption{Frontend Teknolojileri}
+\end{table}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|p{10.5cm}|}
+\hline
+\textbf{Tool} & \textbf{Kullanım} \\ \hline
+Docker 24.0+ & Containerization, isolated environments, consistent deployment \\ \hline
+Docker Compose 2.0+ & Multi-container orchestration, service dependencies, network isolation \\ \hline
+Git 2.x & Version control, distributed development, branch management \\ \hline
+GitHub & Code hosting, issue tracking, pull requests, collaboration \\ \hline
+pip 23.x & Python package management, virtual environment support \\ \hline
+npm 10.x & Node.js package management, dependency resolution, lock files \\ \hline
+Node.js 20.x & JavaScript runtime, NPM ecosystem, ES modules \\ \hline
+OpenAPI/Swagger 3.0 & Auto-generated API docs, interactive testing (FastAPI /docs) \\ \hline
+ReDoc & Alternative API documentation UI (/redoc) \\ \hline
+\end{tabular}
+\caption{DevOps, Tooling \& Documentation}
+\end{table}
+
+\vspace{0.2cm}
+
+\noindent\textbf{Test Tools (Potansiyel):} pytest, pytest-asyncio (Python), Vitest, React Testing Library (Frontend)
 \begin{thebibliography}{9}
 
 % Kaynakça girişlerini buraya ekleyin
