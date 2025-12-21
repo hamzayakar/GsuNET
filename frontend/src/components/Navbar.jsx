@@ -120,6 +120,13 @@ const Navbar = () => {
                                 >
                                   {t('rooms')}
                                 </Link>
+                                <Link
+                                  to="/admin/sponsorship-tracking"
+                                  onClick={() => setShowAdminMenu(false)}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  {t('sponsorshipTracking') || 'Sponsorship Tracking'}
+                                </Link>
                               </>
                             )}
                           </div>

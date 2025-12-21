@@ -5,6 +5,7 @@ Review6: Sponsor matching feature
 from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 
 class SponsorshipStatus(str, Enum):
@@ -18,6 +19,27 @@ class SponsorshipType(str, Enum):
     """Sponsorship type"""
     INDIVIDUAL = "individual"
     CORPORATE = "corporate"
+
+
+class UserBasicInfo(BaseModel):
+    """Basic user information for nested responses"""
+    id: int
+    full_name: str
+    email: str
+
+    class Config:
+        from_attributes = True
+
+
+class ClubBasicInfo(BaseModel):
+    """Basic club information for nested responses"""
+    id: int
+    name: str
+    description: Optional[str] = None
+    manager: Optional[UserBasicInfo] = None
+
+    class Config:
+        from_attributes = True
 
 
 class SponsorshipRequestCreate(BaseModel):
@@ -34,6 +56,7 @@ class SponsorshipRequestResponse(BaseModel):
     """Schema for sponsorship request response"""
     id: int
     sponsor_id: int
+    sponsor: Optional[UserBasicInfo] = None  # Include sponsor user info
     company_name: str
     contact_info: str
     vision: str
@@ -63,6 +86,7 @@ class SponsorshipMatchResponse(BaseModel):
     sponsorship_request_id: int
     club_id: int
     club_name: str
+    club: Optional[ClubBasicInfo] = None  # Include club details
     match_rank: int
     ai_reasoning: str
     created_at: datetime

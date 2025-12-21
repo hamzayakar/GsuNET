@@ -35,6 +35,10 @@ export default function SponsorshipManagement() {
   // Active tab
   const [activeTab, setActiveTab] = useState('form'); // 'form' or 'applications'
 
+  // Detail modal state
+  const [selectedApplication, setSelectedApplication] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
   // Fetch applications on mount
   useEffect(() => {
     fetchApplications();
@@ -43,8 +47,8 @@ export default function SponsorshipManagement() {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const response = await sponsorshipsAPI.getMyApplications();
-      setApplications(response.data);
+      const data = await sponsorshipsAPI.getMyApplications();
+      setApplications(data);
     } catch (error) {
       console.error('Error fetching applications:', error);
       toast.error(t('sponsorshipFetchError') || 'Failed to fetch applications');
@@ -56,14 +60,38 @@ export default function SponsorshipManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
+    // Validation - Check required fields
     if (!formData.company_name || !formData.contact_info || !formData.vision || !formData.sponsorship_goals) {
       toast.error(t('sponsorshipFillRequired') || 'Please fill all required fields');
       return;
     }
 
+    // Validation - Check minimum lengths
+    if (formData.company_name.length < 2) {
+      toast.error('Company name must be at least 2 characters');
+      return;
+    }
+    if (formData.contact_info.length < 5) {
+      toast.error('Contact info must be at least 5 characters');
+      return;
+    }
+    if (formData.vision.length < 10) {
+      toast.error('Company vision must be at least 10 characters');
+      return;
+    }
+    if (formData.sponsorship_goals.length < 10) {
+      toast.error('Sponsorship goals must be at least 10 characters');
+      return;
+    }
+
     try {
       setSubmitting(true);
+
+      // Debug logging
+      console.log('[SPONSORSHIP DEBUG] Submitting application:', formData);
+      console.log('[SPONSORSHIP DEBUG] Vision length:', formData.vision?.length);
+      console.log('[SPONSORSHIP DEBUG] Goals length:', formData.sponsorship_goals?.length);
+
       await sponsorshipsAPI.createApplication(formData);
 
       toast.success(t('sponsorshipCreated') || 'Sponsorship application submitted successfully!');
@@ -83,8 +111,38 @@ export default function SponsorshipManagement() {
       setActiveTab('applications');
 
     } catch (error) {
-      console.error('Error creating application:', error);
-      toast.error(error.response?.data?.detail || t('sponsorshipCreateError') || 'Failed to create application');
+      console.error('[SPONSORSHIP DEBUG] Error creating application:', error);
+      console.error('[SPONSORSHIP DEBUG] Error response:', error.response);
+      console.error('[SPONSORSHIP DEBUG] Error data:', error.response?.data);
+
+      // Handle validation errors (422)
+      if (error?.response?.status === 422) {
+        const validationErrors = error.response?.data?.detail;
+        console.error('[SPONSORSHIP DEBUG] Validation errors:', validationErrors);
+
+        if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+          // Display first validation error
+          const firstError = validationErrors[0];
+          const fieldName = firstError?.loc?.[1] || 'field';
+          const message = firstError?.msg || 'Validation error';
+          toast.error(`${fieldName}: ${message}`);
+        } else if (typeof validationErrors === 'string') {
+          toast.error(validationErrors);
+        } else {
+          toast.error(t('sponsorshipValidationError') || 'Please check all required fields (min 10 chars for vision and goals)');
+        }
+      } else if (error?.response?.data?.detail) {
+        // Handle other API errors
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          toast.error(detail);
+        } else {
+          toast.error(t('sponsorshipCreateError') || 'Failed to create application');
+        }
+      } else {
+        // Handle network errors or unknown errors
+        toast.error(error?.message || t('sponsorshipCreateError') || 'Failed to create application');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -322,6 +380,9 @@ export default function SponsorshipManagement() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {t('submitted') || 'Submitted'}
                       </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {t('actions') || 'Actions'}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -352,12 +413,138 @@ export default function SponsorshipManagement() {
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {formatDate(app.created_at)}
                         </td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => {
+                              setSelectedApplication(app);
+                              setShowDetailModal(true);
+                            }}
+                            className="text-red-600 hover:text-red-900 text-sm font-medium"
+                          >
+                            {t('viewDetails') || 'View Details'}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {showDetailModal && selectedApplication && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            {/* Background overlay */}
+            <div
+              className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75"
+              onClick={() => setShowDetailModal(false)}
+            />
+
+            {/* Modal panel */}
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-3xl sm:w-full">
+              {/* Header */}
+              <div className="bg-red-600 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-white">
+                    {t('applicationDetails') || 'Application Details'}
+                  </h3>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="text-white hover:text-gray-200"
+                  >
+                    <span className="text-2xl">&times;</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="bg-white px-6 py-4 space-y-4">
+                {/* Status Badge */}
+                <div className="flex justify-between items-center pb-4 border-b">
+                  <span className="text-sm text-gray-500">Status:</span>
+                  {getStatusBadge(selectedApplication.status)}
+                </div>
+
+                {/* Company Name */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                    {t('companyName') || 'Company Name'}
+                  </h4>
+                  <p className="text-gray-900">{selectedApplication.company_name}</p>
+                </div>
+
+                {/* Contact Info */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                    {t('contactInfo') || 'Contact Information'}
+                  </h4>
+                  <p className="text-gray-900">{selectedApplication.contact_info}</p>
+                </div>
+
+                {/* Vision */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                    {t('companyVision') || 'Company Vision/Mission'}
+                  </h4>
+                  <p className="text-gray-900 whitespace-pre-wrap">{selectedApplication.vision}</p>
+                </div>
+
+                {/* Sponsorship Goals */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                    {t('sponsorshipGoals') || 'Sponsorship Goals'}
+                  </h4>
+                  <p className="text-gray-900 whitespace-pre-wrap">{selectedApplication.sponsorship_goals}</p>
+                </div>
+
+                {/* Type and Budget */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                      {t('sponsorshipType') || 'Type'}
+                    </h4>
+                    <p className="text-gray-900 capitalize">{selectedApplication.sponsorship_type}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                      {t('budgetRange') || 'Budget Range'}
+                    </h4>
+                    <p className="text-gray-900">{selectedApplication.budget_range || t('notSpecified') || 'Not specified'}</p>
+                  </div>
+                </div>
+
+                {/* Rejection Reason (if rejected) */}
+                {selectedApplication.status === 'rejected' && selectedApplication.rejection_reason && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-red-800 mb-1">
+                      {t('rejectionReason') || 'Rejection Reason'}
+                    </h4>
+                    <p className="text-red-700">{selectedApplication.rejection_reason}</p>
+                  </div>
+                )}
+
+                {/* Submission Date */}
+                <div className="pt-4 border-t">
+                  <span className="text-sm text-gray-500">
+                    {t('submittedOn') || 'Submitted on'}: {formatDate(selectedApplication.created_at)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-gray-50 px-6 py-4">
+                <button
+                  onClick={() => setShowDetailModal(false)}
+                  className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  {t('close') || 'Close'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

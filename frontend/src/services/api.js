@@ -238,15 +238,20 @@ export const roomsAPI = {
     return response.data;
   },
 
-  recommendEnhanced: async (capacity, eventDate, startTime, duration) => {
-    const response = await api.get('/rooms/recommend', {
-      params: {
-        capacity,
-        event_date: eventDate,
-        start_time: startTime,
-        duration,
-      },
-    });
+  recommendEnhanced: async (capacity, eventDate, startTime, duration, maxCapacity = null) => {
+    const params = {
+      capacity,
+      event_date: eventDate,
+      start_time: startTime,
+      duration,
+    };
+
+    // Add max_capacity if provided (for 24-hour rule)
+    if (maxCapacity) {
+      params.max_capacity = maxCapacity;
+    }
+
+    const response = await api.get('/rooms/recommend', { params });
     return response.data;
   },
 
@@ -366,24 +371,36 @@ export const sponsorshipsAPI = {
   // Create sponsorship application (sponsor role)
   createApplication: async (applicationData) => {
     const response = await api.post('/sponsorships/apply', applicationData);
-    return response;
+    return response.data;
   },
 
   // Get my applications (sponsor role)
   getMyApplications: async () => {
     const response = await api.get('/sponsorships/my-applications');
-    return response;
+    return response.data;
+  },
+
+  // Get all applications (admin only)
+  getAllApplications: async () => {
+    const response = await api.get('/sponsorships/all');
+    return response.data;
   },
 
   // Get pending applications (admin/advisor role)
   getPendingApplications: async () => {
     const response = await api.get('/sponsorships/pending');
-    return response;
+    return response.data;
   },
 
   // Review application - approve/reject (admin role)
   reviewApplication: async (requestId, reviewData) => {
     const response = await api.put(`/sponsorships/${requestId}/review`, reviewData);
+    return response.data;
+  },
+
+  // Get matches for a specific sponsorship (admin only)
+  getMatches: async (sponsorshipId) => {
+    const response = await api.get(`/sponsorships/${sponsorshipId}/matches`);
     return response.data;
   },
 

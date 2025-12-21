@@ -5,13 +5,15 @@ Review6: Sponsor matching feature with TWO-WAY MATCHING
 Endpoints:
 - POST /apply: Create sponsorship application (sponsor role)
 - GET /my-applications: Get my applications (sponsor role)
+- GET /all: Get all applications regardless of status (admin role)
 - GET /pending: Get pending applications (admin/advisor role)
 - PUT /{id}/review: Approve/reject application + trigger AI matching (admin role)
+- GET /{id}/matches: Get AI matches for a specific sponsorship (admin role)
 - GET /matches/my-club: Get matches for my club (club_manager/advisor role)
 - GET /{id}/details: Get sponsorship details (club_manager/advisor/admin role)
 """
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timezone
 from typing import List
 
@@ -51,6 +53,15 @@ async def create_sponsorship_application(
     The application will be in PENDING status until admin reviews it.
     Admin will be notified via notification system.
     """
+    # Debug logging
+    print(f"[SPONSORSHIP DEBUG] Received application data:")
+    print(f"  Company: {request_data.company_name}")
+    print(f"  Contact: {request_data.contact_info}")
+    print(f"  Vision length: {len(request_data.vision)} chars")
+    print(f"  Goals length: {len(request_data.sponsorship_goals)} chars")
+    print(f"  Type: {request_data.sponsorship_type}")
+    print(f"  Budget: {request_data.budget_range}")
+
     # Create new sponsorship request
     new_request = SponsorshipRequest(
         sponsor_id=current_user.id,
@@ -92,7 +103,9 @@ async def get_my_sponsorship_applications(
 
     Returns applications ordered by creation date (newest first).
     """
-    applications = db.query(SponsorshipRequest).filter(
+    applications = db.query(SponsorshipRequest).options(
+        joinedload(SponsorshipRequest.sponsor)
+    ).filter(
         SponsorshipRequest.sponsor_id == current_user.id
     ).order_by(SponsorshipRequest.created_at.desc()).all()
 
@@ -102,6 +115,26 @@ async def get_my_sponsorship_applications(
 # ============================================
 # ADMIN/ADVISOR ENDPOINTS
 # ============================================
+
+@router.get("/all", response_model=List[SponsorshipRequestResponse])
+async def get_all_sponsorship_requests(
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all sponsorship requests regardless of status (admin only).
+
+    Returns all requests (PENDING, APPROVED, REJECTED) ordered by creation date (newest first).
+    Includes sponsor information (full_name, email) via relationship.
+    """
+    all_requests = db.query(SponsorshipRequest).options(
+        joinedload(SponsorshipRequest.sponsor)
+    ).order_by(
+        SponsorshipRequest.created_at.desc()
+    ).all()
+
+    return all_requests
+
 
 @router.get("/pending", response_model=List[SponsorshipRequestResponse])
 async def get_pending_sponsorship_requests(
@@ -113,7 +146,9 @@ async def get_pending_sponsorship_requests(
 
     Returns only PENDING requests ordered by creation date (oldest first).
     """
-    pending_requests = db.query(SponsorshipRequest).filter(
+    pending_requests = db.query(SponsorshipRequest).options(
+        joinedload(SponsorshipRequest.sponsor)
+    ).filter(
         SponsorshipRequest.status == SponsorshipStatus.PENDING
     ).order_by(SponsorshipRequest.created_at.asc()).all()
 
@@ -288,6 +323,53 @@ async def get_my_club_sponsorship_matches(
             sponsorship_request_id=match.sponsorship_request_id,
             club_id=match.club_id,
             club_name=club.name if club else "Unknown",
+            match_rank=match.match_rank,
+            ai_reasoning=match.ai_reasoning,
+            created_at=match.created_at
+        ))
+
+    return results
+
+
+@router.get("/{request_id}/matches", response_model=List[SponsorshipMatchResponse])
+async def get_sponsorship_matches(
+    request_id: int,
+    current_user: User = Depends(require_role([UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all AI-generated matches for a specific sponsorship request (admin only).
+
+    Returns matches ordered by rank (1 = best match).
+    Includes club information and AI reasoning for each match.
+    """
+    # Verify sponsorship exists
+    sponsorship_req = db.query(SponsorshipRequest).filter(
+        SponsorshipRequest.id == request_id
+    ).first()
+
+    if not sponsorship_req:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sponsorship request not found"
+        )
+
+    # Get all matches for this sponsorship with club and manager info
+    matches = db.query(SponsorshipMatch).options(
+        joinedload(SponsorshipMatch.club).joinedload(Club.manager)
+    ).filter(
+        SponsorshipMatch.sponsorship_request_id == request_id
+    ).order_by(SponsorshipMatch.match_rank.asc()).all()
+
+    # Build response - relationships are already loaded
+    results = []
+    for match in matches:
+        results.append(SponsorshipMatchResponse(
+            id=match.id,
+            sponsorship_request_id=match.sponsorship_request_id,
+            club_id=match.club_id,
+            club_name=match.club.name if match.club else "Unknown",
+            club=match.club,  # Include full club object
             match_rank=match.match_rank,
             ai_reasoning=match.ai_reasoning,
             created_at=match.created_at

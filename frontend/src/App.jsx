@@ -24,6 +24,7 @@ import AdminClubManagement from './pages/AdminClubManagement';
 import ScheduleManagement from './pages/ScheduleManagement';
 import RoomManagement from './pages/RoomManagement';
 import SponsorshipManagement from './pages/SponsorshipManagement';
+import AdminSponsorshipTracking from './pages/AdminSponsorshipTracking';
 
 function App() {
   return (
@@ -173,6 +174,14 @@ function App() {
                 element={
                   <ProtectedRoute roles={['sponsor']}>
                     <SponsorshipManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/sponsorship-tracking"
+                element={
+                  <ProtectedRoute roles={['admin']}>
+                    <AdminSponsorshipTracking />
                   </ProtectedRoute>
                 }
               />

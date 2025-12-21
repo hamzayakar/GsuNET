@@ -62,6 +62,12 @@ const ClubManagement = () => {
     members_only: false,
   });
   const [recommendedRooms, setRecommendedRooms] = useState([]);
+  const [conflictedRooms, setConflictedRooms] = useState([]);
+  const [disabledRooms, setDisabledRooms] = useState([]);
+  const [conflicts, setConflicts] = useState([]);
+  const [hasConflicts, setHasConflicts] = useState(false);
+  const [hoursUntilEvent, setHoursUntilEvent] = useState(null);
+  const [roomRecommendationMessage, setRoomRecommendationMessage] = useState('');
   const [loadingEvent, setLoadingEvent] = useState(false);
 
   // Sponsorship matches state (NEW - Review6)
@@ -153,23 +159,59 @@ const ClubManagement = () => {
   const fetchRoomRecommendations = async () => {
     try {
       // Use enhanced mode if date/time/duration available
-      if (formData.event_datetime && formData.duration) {
+      if (formData.event_datetime && formData.duration && formData.max_capacity) {
         const eventDate = formData.event_datetime.split('T')[0];
         const startTime = formData.event_datetime.split('T')[1] || '00:00';
         const response = await roomsAPI.recommendEnhanced(
           parseInt(formData.max_capacity),
           eventDate,
           startTime,
-          parseInt(formData.duration)
+          parseInt(formData.duration),
+          parseInt(formData.max_capacity) // Pass max_capacity for 24-hour rule
         );
-        setRecommendedRooms(response.available_rooms || []);
-      } else {
-        // Basic mode
+
+        // Handle enhanced response with conflicts and disabled rooms
+        if (response.available_rooms !== undefined) {
+          setRecommendedRooms(response.available_rooms || []);
+          setConflictedRooms(response.conflicted_rooms || []);
+          setDisabledRooms(response.disabled_rooms || []);
+          setConflicts(response.conflicts || []);
+          setHasConflicts(response.has_conflicts || false);
+          setHoursUntilEvent(response.hours_until_event);
+          setRoomRecommendationMessage(response.message || '');
+        } else {
+          // Basic response (array of rooms)
+          setRecommendedRooms(response || []);
+          setConflictedRooms([]);
+          setDisabledRooms([]);
+          setConflicts([]);
+          setHasConflicts(false);
+          setHoursUntilEvent(null);
+          setRoomRecommendationMessage('');
+        }
+      } else if (formData.max_capacity) {
+        // Basic mode - only capacity
         const rooms = await roomsAPI.recommend(parseInt(formData.max_capacity));
         setRecommendedRooms(Array.isArray(rooms) ? rooms : []);
+        setConflictedRooms([]);
+        setDisabledRooms([]);
+        setConflicts([]);
+        setHasConflicts(false);
+        setHoursUntilEvent(null);
+        setRoomRecommendationMessage('');
+      } else {
+        // Clear all if no capacity set
+        setRecommendedRooms([]);
+        setConflictedRooms([]);
+        setDisabledRooms([]);
+        setConflicts([]);
+        setHasConflicts(false);
+        setHoursUntilEvent(null);
+        setRoomRecommendationMessage('');
       }
     } catch (err) {
       console.error('Failed to fetch room recommendations:', err);
+      toast.error(t('failed_to_fetch_rooms') || 'Failed to fetch room recommendations');
     }
   };
 
@@ -587,7 +629,7 @@ const ClubManagement = () => {
               </div>
             </div>
 
-            {/* Capacities */}
+            {/* Capacities - Disabled until date is selected */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -599,8 +641,15 @@ const ClubManagement = () => {
                   onChange={(e) => setFormData({ ...formData, expected_capacity: e.target.value })}
                   required
                   min="1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                  disabled={!formData.event_datetime}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  title={!formData.event_datetime ? (t('select_date_first') || 'Please select event date first') : ''}
                 />
+                {!formData.event_datetime && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('select_date_first') || 'Select event date & time first'}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -613,30 +662,128 @@ const ClubManagement = () => {
                   onChange={(e) => setFormData({ ...formData, max_capacity: e.target.value })}
                   required
                   min="1"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                  disabled={!formData.event_datetime}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  title={!formData.event_datetime ? (t('select_date_first') || 'Please select event date first') : ''}
                 />
+                {!formData.event_datetime && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('select_date_first') || 'Select event date & time first'}
+                  </p>
+                )}
               </div>
             </div>
 
-            {/* Room Selection */}
-            {recommendedRooms.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('selectRoom') || 'Select Room'} *
-                </label>
-                <select
-                  value={formData.room_id}
-                  onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="">{t('selectRoom') || 'Select a room...'}</option>
-                  {recommendedRooms.map(room => (
-                    <option key={room.id} value={room.id}>
-                      {room.name} (Capacity: {room.capacity})
-                    </option>
-                  ))}
-                </select>
+            {/* Room Selection with Conflict Detection */}
+            {(recommendedRooms.length > 0 || conflictedRooms.length > 0 || disabledRooms.length > 0) && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('selectRoom') || 'Select Room'} *
+                  </label>
+
+                  {/* Recommendation message */}
+                  {roomRecommendationMessage && (
+                    <div className={`mb-3 p-3 rounded-lg ${
+                      recommendedRooms.length > 0
+                        ? 'bg-green-50 border border-green-200 text-green-800'
+                        : 'bg-yellow-50 border border-yellow-200 text-yellow-800'
+                    }`}>
+                      <p className="text-sm">{roomRecommendationMessage}</p>
+                      {hoursUntilEvent !== null && hoursUntilEvent < 24 && (
+                        <p className="text-xs mt-1">
+                          ⏰ Event in {Math.round(hoursUntilEvent)} hours - 24-hour capacity rule applies
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Available Rooms (No conflicts, not disabled) */}
+                  {recommendedRooms.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-green-700 mb-2">✅ Available Rooms</h4>
+                      <select
+                        value={formData.room_id}
+                        onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
+                        required
+                        className="w-full px-4 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 bg-green-50"
+                      >
+                        <option value="">{t('selectRoom') || 'Select a room...'}</option>
+                        {recommendedRooms.map(room => (
+                          <option key={room.id} value={room.id}>
+                            {room.name} - Capacity: {room.capacity} {room.location ? `(${room.location})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Conflicted Rooms (Admin can override) */}
+                  {conflictedRooms.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-yellow-700 mb-2">
+                        ⚠️ Rooms with Conflicts (Admin can override)
+                      </h4>
+                      <div className="space-y-2">
+                        {conflictedRooms.map(room => {
+                          const roomConflicts = conflicts.filter(c => c.room_id === room.id);
+                          return (
+                            <div key={room.id} className="border border-yellow-300 bg-yellow-50 rounded-lg p-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-900">
+                                    {room.name} - Capacity: {room.capacity}
+                                  </p>
+                                  <div className="mt-2 space-y-1">
+                                    {roomConflicts.map((conflict, idx) => (
+                                      <p key={idx} className="text-xs text-yellow-800">
+                                        🔴 {conflict.conflict_type}: {conflict.conflict_title}
+                                        ({conflict.time_range})
+                                        {conflict.is_recurring && ' - Weekly'}
+                                      </p>
+                                    ))}
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData({ ...formData, room_id: room.id.toString() })}
+                                  className={`ml-4 px-3 py-1 rounded text-sm ${
+                                    formData.room_id === room.id.toString()
+                                      ? 'bg-yellow-600 text-white'
+                                      : 'bg-white border border-yellow-600 text-yellow-600 hover:bg-yellow-50'
+                                  }`}
+                                >
+                                  {formData.room_id === room.id.toString() ? 'Selected' : 'Override'}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Disabled Rooms (24-hour rule) */}
+                  {disabledRooms.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="text-sm font-semibold text-red-700 mb-2">
+                        🚫 Disabled Rooms (Not recommended for last-minute events)
+                      </h4>
+                      <div className="space-y-2">
+                        {disabledRooms.map(room => (
+                          <div key={room.id} className="border border-red-300 bg-red-50 rounded-lg p-3 opacity-60">
+                            <p className="font-medium text-gray-900">
+                              {room.name} - Capacity: {room.capacity}
+                            </p>
+                            <p className="text-xs text-red-800 mt-1">
+                              {room.disable_reason}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

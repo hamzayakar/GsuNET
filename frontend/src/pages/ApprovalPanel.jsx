@@ -106,8 +106,8 @@ const ApprovalPanel = () => {
     setSponsorshipsError('');
 
     try {
-      const response = await sponsorshipsAPI.getPendingApplications();
-      setSponsorships(response.data);
+      const data = await sponsorshipsAPI.getPendingApplications();
+      setSponsorships(data || []);
     } catch (err) {
       setSponsorshipsError('Failed to load sponsorship requests. Please try again later.');
       console.error('Error fetching sponsorships:', err);

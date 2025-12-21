@@ -1,7 +1,7 @@
 # Test User Credentials
 
 **Generated automatically by seed_test_users.py**
-**Last Updated**: 2025-12-22 00:00
+**Last Updated**: 2025-12-22 01:51
 **Total Users**: 62
 
 All passwords meet the security requirements:
@@ -34,70 +34,70 @@ All passwords meet the security requirements:
 
 ### Advisors (5)
 
-1. **Dr. Burak Çelik** (Computer Engineering) - `advisor1@gsu.edu.tr` / `Advisor123!`
-2. **Dr. İrem Aydın** (Electrical Engineering) - `advisor2@gsu.edu.tr` / `Advisor223!`
-3. **Dr. Ahmet Öztürk** (Industrial Engineering) - `advisor3@gsu.edu.tr` / `Advisor323!`
-4. **Dr. Can Keskin** (Business Administration) - `advisor4@gsu.edu.tr` / `Advisor423!`
-5. **Dr. Zeynep Kaya** (Law) - `advisor5@gsu.edu.tr` / `Advisor523!`
+1. **Dr. Deniz Özkan** (Computer Engineering) - `advisor1@gsu.edu.tr` / `Advisor123!`
+2. **Dr. Cem Erdoğan** (Electrical Engineering) - `advisor2@gsu.edu.tr` / `Advisor223!`
+3. **Dr. Zeynep Aydın** (Industrial Engineering) - `advisor3@gsu.edu.tr` / `Advisor323!`
+4. **Dr. Mehmet Keskin** (Business Administration) - `advisor4@gsu.edu.tr` / `Advisor423!`
+5. **Dr. Kerem Kaya** (Law) - `advisor5@gsu.edu.tr` / `Advisor523!`
 
 ### Club Managers (15)
 
-1. **Ece Kurt** (Business Administration) - `manager1@gsu.edu.tr` / `Manager123!`
-2. **Ayşe Aksoy** (Sociology) - `manager2@gsu.edu.tr` / `Manager223!`
-3. **Pelin Demir** (Economics) - `manager3@gsu.edu.tr` / `Manager323!`
-4. **Deniz Polat** (Business Administration) - `manager4@gsu.edu.tr` / `Manager423!`
-5. **Kerem Erdoğan** (Chemistry) - `manager5@gsu.edu.tr` / `Manager523!`
-6. **Kerem Kaya** (Sociology) - `manager6@gsu.edu.tr` / `Manager623!`
-7. **Fatma Demir** (Economics) - `manager7@gsu.edu.tr` / `Manager723!`
-8. **Pelin Polat** (Law) - `manager8@gsu.edu.tr` / `Manager823!`
-9. **Onur Keskin** (Physics) - `manager9@gsu.edu.tr` / `Manager923!`
-10. **Pelin Polat** (Sociology) - `manager10@gsu.edu.tr` / `Manager1023!`
-11. **Mehmet Yılmaz** (Electrical Engineering) - `manager11@gsu.edu.tr` / `Manager1123!`
-12. **Ahmet Koç** (Law) - `manager12@gsu.edu.tr` / `Manager1223!`
-13. **Ayşe Kurt** (Chemistry) - `manager13@gsu.edu.tr` / `Manager1323!`
-14. **Mehmet Aksoy** (Business Administration) - `manager14@gsu.edu.tr` / `Manager1423!`
-15. **Can Aydın** (Economics) - `manager15@gsu.edu.tr` / `Manager1523!`
+1. **Can Demir** (Business Administration) - `manager1@gsu.edu.tr` / `Manager123!`
+2. **Ahmet Yılmaz** (Physics) - `manager2@gsu.edu.tr` / `Manager223!`
+3. **Mehmet Öztürk** (Electrical Engineering) - `manager3@gsu.edu.tr` / `Manager323!`
+4. **Can Demir** (Physics) - `manager4@gsu.edu.tr` / `Manager423!`
+5. **Pelin Yılmaz** (Economics) - `manager5@gsu.edu.tr` / `Manager523!`
+6. **Hakan Demir** (Economics) - `manager6@gsu.edu.tr` / `Manager623!`
+7. **Ece Şahin** (Physics) - `manager7@gsu.edu.tr` / `Manager723!`
+8. **Burak Aksoy** (Industrial Engineering) - `manager8@gsu.edu.tr` / `Manager823!`
+9. **Yasemin Keskin** (Electrical Engineering) - `manager9@gsu.edu.tr` / `Manager923!`
+10. **Can Erdoğan** (Electrical Engineering) - `manager10@gsu.edu.tr` / `Manager1023!`
+11. **Selin Keskin** (Economics) - `manager11@gsu.edu.tr` / `Manager1123!`
+12. **Ahmet Öztürk** (Economics) - `manager12@gsu.edu.tr` / `Manager1223!`
+13. **Onur Aydın** (Chemistry) - `manager13@gsu.edu.tr` / `Manager1323!`
+14. **Gül Öztürk** (Economics) - `manager14@gsu.edu.tr` / `Manager1423!`
+15. **Burak Şahin** (Business Administration) - `manager15@gsu.edu.tr` / `Manager1523!`
 
 ### Students (38)
 
-1. **Selin Demir** (Mathematics) - `student1@gsu.edu.tr` / `Student123!`
-2. **Burak Öztürk** (Computer Engineering) - `student2@gsu.edu.tr` / `Student223!`
-3. **Hakan Polat** (Computer Engineering) - `student3@gsu.edu.tr` / `Student323!`
-4. **Deniz Demir** (Economics) - `student4@gsu.edu.tr` / `Student423!`
-5. **Onur Yılmaz** (Chemistry) - `student5@gsu.edu.tr` / `Student523!`
-6. **Hakan Demir** (Computer Engineering) - `student6@gsu.edu.tr` / `Student623!`
-7. **Onur Demir** (Computer Engineering) - `student7@gsu.edu.tr` / `Student723!`
-8. **Pelin Şahin** (Physics) - `student8@gsu.edu.tr` / `Student823!`
-9. **Ceren Aksoy** (Business Administration) - `student9@gsu.edu.tr` / `Student923!`
-10. **Mehmet Keskin** (Computer Engineering) - `student10@gsu.edu.tr` / `Student1023!`
-11. **Deniz Öztürk** (Mathematics) - `student11@gsu.edu.tr` / `Student1123!`
-12. **Zeynep Özkan** (Business Administration) - `student12@gsu.edu.tr` / `Student1223!`
-13. **Cem Koç** (Physics) - `student13@gsu.edu.tr` / `Student1323!`
-14. **Cem Aydın** (Mathematics) - `student14@gsu.edu.tr` / `Student1423!`
-15. **İrem Koç** (Physics) - `student15@gsu.edu.tr` / `Student1523!`
-16. **Kerem Aksoy** (Electrical Engineering) - `student16@gsu.edu.tr` / `Student1623!`
-17. **Merve Yıldız** (Economics) - `student17@gsu.edu.tr` / `Student1723!`
-18. **Zeynep Aksoy** (Economics) - `student18@gsu.edu.tr` / `Student1823!`
-19. **Hakan Öztürk** (Chemistry) - `student19@gsu.edu.tr` / `Student1923!`
-20. **Fatma Aksoy** (Law) - `student20@gsu.edu.tr` / `Student2023!`
-21. **Deniz Polat** (Industrial Engineering) - `student21@gsu.edu.tr` / `Student2123!`
-22. **Fatma Öztürk** (Computer Engineering) - `student22@gsu.edu.tr` / `Student2223!`
-23. **Tolga Çelik** (Computer Engineering) - `student23@gsu.edu.tr` / `Student2323!`
-24. **Merve Demir** (Electrical Engineering) - `student24@gsu.edu.tr` / `Student2423!`
-25. **Burak Yıldız** (Mathematics) - `student25@gsu.edu.tr` / `Student2523!`
-26. **Ahmet Demir** (Economics) - `student26@gsu.edu.tr` / `Student2623!`
-27. **Ceren Aksoy** (Chemistry) - `student27@gsu.edu.tr` / `Student2723!`
-28. **Cem Özkan** (Mathematics) - `student28@gsu.edu.tr` / `Student2823!`
-29. **Can Kaya** (Sociology) - `student29@gsu.edu.tr` / `Student2923!`
-30. **İrem Aksoy** (Chemistry) - `student30@gsu.edu.tr` / `Student3023!`
-31. **Onur Koç** (Sociology) - `student31@gsu.edu.tr` / `Student3123!`
-32. **Gül Erdoğan** (Mathematics) - `student32@gsu.edu.tr` / `Student3223!`
-33. **Emre Şahin** (Electrical Engineering) - `student33@gsu.edu.tr` / `Student3323!`
-34. **Selin Aydın** (Electrical Engineering) - `student34@gsu.edu.tr` / `Student3423!`
-35. **Cem Keskin** (Business Administration) - `student35@gsu.edu.tr` / `Student3523!`
-36. **Deniz Çelik** (Computer Engineering) - `student36@gsu.edu.tr` / `Student3623!`
-37. **Ali Özkan** (Chemistry) - `student37@gsu.edu.tr` / `Student3723!`
-38. **Ahmet Erdoğan** (Physics) - `student38@gsu.edu.tr` / `Student3823!`
+1. **Kerem Kaya** (Industrial Engineering) - `student1@gsu.edu.tr` / `Student123!`
+2. **Gül Erdoğan** (Business Administration) - `student2@gsu.edu.tr` / `Student223!`
+3. **Burak Demir** (Industrial Engineering) - `student3@gsu.edu.tr` / `Student323!`
+4. **Merve Erdoğan** (Business Administration) - `student4@gsu.edu.tr` / `Student423!`
+5. **Mehmet Erdoğan** (Business Administration) - `student5@gsu.edu.tr` / `Student523!`
+6. **Can Şahin** (Economics) - `student6@gsu.edu.tr` / `Student623!`
+7. **Burak Yıldız** (Economics) - `student7@gsu.edu.tr` / `Student723!`
+8. **Mehmet Koç** (Business Administration) - `student8@gsu.edu.tr` / `Student823!`
+9. **Merve Aksoy** (Physics) - `student9@gsu.edu.tr` / `Student923!`
+10. **İrem Polat** (Industrial Engineering) - `student10@gsu.edu.tr` / `Student1023!`
+11. **Deniz Aksoy** (Computer Engineering) - `student11@gsu.edu.tr` / `Student1123!`
+12. **Zeynep Polat** (Sociology) - `student12@gsu.edu.tr` / `Student1223!`
+13. **Merve Öztürk** (Electrical Engineering) - `student13@gsu.edu.tr` / `Student1323!`
+14. **Ali Keskin** (Computer Engineering) - `student14@gsu.edu.tr` / `Student1423!`
+15. **Ahmet Özkan** (Economics) - `student15@gsu.edu.tr` / `Student1523!`
+16. **Selin Arslan** (Business Administration) - `student16@gsu.edu.tr` / `Student1623!`
+17. **Zeynep Demir** (Mathematics) - `student17@gsu.edu.tr` / `Student1723!`
+18. **Cem Özkan** (Mathematics) - `student18@gsu.edu.tr` / `Student1823!`
+19. **Ahmet Yıldız** (Law) - `student19@gsu.edu.tr` / `Student1923!`
+20. **Ayşe Demir** (Sociology) - `student20@gsu.edu.tr` / `Student2023!`
+21. **Mehmet Öztürk** (Law) - `student21@gsu.edu.tr` / `Student2123!`
+22. **Yasemin Polat** (Electrical Engineering) - `student22@gsu.edu.tr` / `Student2223!`
+23. **Zeynep Yıldız** (Electrical Engineering) - `student23@gsu.edu.tr` / `Student2323!`
+24. **Ali Çelik** (Business Administration) - `student24@gsu.edu.tr` / `Student2423!`
+25. **Elif Aksoy** (Physics) - `student25@gsu.edu.tr` / `Student2523!`
+26. **Burak Koç** (Physics) - `student26@gsu.edu.tr` / `Student2623!`
+27. **Ayşe Koç** (Physics) - `student27@gsu.edu.tr` / `Student2723!`
+28. **Merve Kurt** (Electrical Engineering) - `student28@gsu.edu.tr` / `Student2823!`
+29. **Merve Keskin** (Sociology) - `student29@gsu.edu.tr` / `Student2923!`
+30. **Ahmet Yılmaz** (Sociology) - `student30@gsu.edu.tr` / `Student3023!`
+31. **Zeynep Çelik** (Electrical Engineering) - `student31@gsu.edu.tr` / `Student3123!`
+32. **Emre Özkan** (Sociology) - `student32@gsu.edu.tr` / `Student3223!`
+33. **Merve Aydın** (Industrial Engineering) - `student33@gsu.edu.tr` / `Student3323!`
+34. **Mehmet Kaya** (Mathematics) - `student34@gsu.edu.tr` / `Student3423!`
+35. **Burak Erdoğan** (Computer Engineering) - `student35@gsu.edu.tr` / `Student3523!`
+36. **Emre Keskin** (Business Administration) - `student36@gsu.edu.tr` / `Student3623!`
+37. **Fatma Öztürk** (Law) - `student37@gsu.edu.tr` / `Student3723!`
+38. **Selin Polat** (Economics) - `student38@gsu.edu.tr` / `Student3823!`
 
 ### Sponsors (2) - Review6: AI-Powered Sponsor Matching
 
@@ -111,62 +111,62 @@ All passwords meet the security requirements:
 ### 1. Computer Science Club
 - **Description**: A club for computer science enthusiasts to learn, share, and collaborate on projects.
 - **Contact Email**: csclub@gsu.edu.tr
-- **Manager**: Ece Kurt
-- **Advisor**: Dr. Burak Çelik
+- **Manager**: Can Demir
+- **Advisor**: Dr. Deniz Özkan
 
 ### 2. Robotics Club
 - **Description**: Building and programming robots, participating in competitions.
 - **Contact Email**: robotics@gsu.edu.tr
-- **Manager**: Ayşe Aksoy
-- **Advisor**: Dr. İrem Aydın
+- **Manager**: Ahmet Yılmaz
+- **Advisor**: Dr. Cem Erdoğan
 
 ### 3. AI & Machine Learning Club
 - **Description**: Exploring artificial intelligence and machine learning technologies.
 - **Contact Email**: aiclub@gsu.edu.tr
-- **Manager**: Pelin Demir
-- **Advisor**: Dr. Burak Çelik
+- **Manager**: Mehmet Öztürk
+- **Advisor**: Dr. Deniz Özkan
 
 ### 4. Photography Club
 - **Description**: Capturing moments, learning photography techniques, organizing photo walks.
 - **Contact Email**: photo@gsu.edu.tr
-- **Manager**: Deniz Polat
-- **Advisor**: Dr. Ahmet Öztürk
+- **Manager**: Can Demir
+- **Advisor**: Dr. Zeynep Aydın
 
 ### 5. Music Club
 - **Description**: For music lovers. Jam sessions, concerts, music theory workshops.
 - **Contact Email**: music@gsu.edu.tr
-- **Manager**: Kerem Erdoğan
-- **Advisor**: Dr. Ahmet Öztürk
+- **Manager**: Pelin Yılmaz
+- **Advisor**: Dr. Zeynep Aydın
 
 ### 6. Theater Club
 - **Description**: Drama, acting, stage performances, and theatrical productions.
 - **Contact Email**: theater@gsu.edu.tr
-- **Manager**: Kerem Kaya
-- **Advisor**: Dr. Can Keskin
+- **Manager**: Hakan Demir
+- **Advisor**: Dr. Mehmet Keskin
 
 ### 7. Sports Club
 - **Description**: Organizing sports events, tournaments, and promoting active lifestyle.
 - **Contact Email**: sports@gsu.edu.tr
-- **Manager**: Fatma Demir
-- **Advisor**: Dr. Can Keskin
+- **Manager**: Ece Şahin
+- **Advisor**: Dr. Mehmet Keskin
 
 ### 8. Literature Club
 - **Description**: Book discussions, creative writing, poetry readings, and literary events.
 - **Contact Email**: literature@gsu.edu.tr
-- **Manager**: Pelin Polat
-- **Advisor**: Dr. Zeynep Kaya
+- **Manager**: Burak Aksoy
+- **Advisor**: Dr. Kerem Kaya
 
 ### 9. Chess Club
 - **Description**: Strategic thinking through chess. Tournaments, training, and friendly matches.
 - **Contact Email**: chess@gsu.edu.tr
-- **Manager**: Onur Keskin
-- **Advisor**: Dr. Zeynep Kaya
+- **Manager**: Yasemin Keskin
+- **Advisor**: Dr. Kerem Kaya
 
 ### 10. Environmental Club
 - **Description**: Promoting sustainability, organizing clean-up drives, and environmental awareness campaigns.
 - **Contact Email**: environment@gsu.edu.tr
-- **Manager**: Pelin Polat
-- **Advisor**: Dr. Burak Çelik
+- **Manager**: Can Erdoğan
+- **Advisor**: Dr. Deniz Özkan
 
 ---
 

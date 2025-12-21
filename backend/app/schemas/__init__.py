@@ -31,6 +31,7 @@ from app.schemas.room import (
     RoomRecommendationQuery,
     RoomRecommendationResponse,
     RoomConflict,
+    DisabledRoom,
 )
 from app.schemas.event_registration import (
     EventRegistrationBase,
@@ -80,6 +81,7 @@ __all__ = [
     "RoomRecommendationQuery",
     "RoomRecommendationResponse",
     "RoomConflict",
+    "DisabledRoom",
     # Event Registration schemas
     "EventRegistrationBase",
     "EventRegistrationCreate",

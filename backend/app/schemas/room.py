@@ -56,11 +56,26 @@ class RoomConflict(BaseModel):
     specific_date: Optional[date] = None
 
 
+# Schema for disabled room (24-hour rule)
+class DisabledRoom(BaseModel):
+    """Room that meets capacity but is disabled due to 24-hour rule"""
+    id: int
+    name: str
+    capacity: int
+    location: Optional[str] = None
+    description: Optional[str] = None
+    features: Optional[str] = None
+    is_available: bool
+    disable_reason: str  # Why this room is disabled
+
+
 # Schema for enhanced room recommendation response
 class RoomRecommendationResponse(BaseModel):
     """Enhanced recommendation with conflict checking"""
-    available_rooms: List[RoomResponse]  # Rooms with no conflicts
+    available_rooms: List[RoomResponse]  # Rooms with no conflicts and not disabled
     conflicted_rooms: Optional[List[dict]] = None  # Rooms with conflicts (capacity match but time conflict)
+    disabled_rooms: Optional[List[DisabledRoom]] = None  # Rooms disabled by 24-hour rule
     conflicts: Optional[List[RoomConflict]] = None  # Detailed conflict information
     has_conflicts: bool = False
+    hours_until_event: Optional[float] = None  # Hours until the event (for UI display)
     message: str  # "3 available rooms found" or "No conflict-free rooms, showing alternatives"

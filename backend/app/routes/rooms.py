@@ -80,6 +80,7 @@ async def recommend_rooms(
     event_date: Optional[date] = Query(None, description="Event date for conflict checking"),
     start_time: Optional[time] = Query(None, description="Event start time"),
     duration: Optional[int] = Query(None, ge=30, le=360, description="Event duration in minutes (30-360)"),
+    max_capacity: Optional[int] = Query(None, description="Max capacity for 24-hour rule"),
     db: Session = Depends(get_db)
 ):
     """
@@ -89,15 +90,17 @@ async def recommend_rooms(
     - GET /api/v1/rooms/recommend?capacity=100
     - Returns list of rooms with capacity >= 100
 
-    **Enhanced Mode** (conflict-aware):
-    - GET /api/v1/rooms/recommend?capacity=100&event_date=2025-12-20&start_time=14:00&duration=120
+    **Enhanced Mode** (conflict-aware + 24-hour rule):
+    - GET /api/v1/rooms/recommend?capacity=100&event_date=2025-12-20&start_time=14:00&duration=120&max_capacity=150
     - Returns rooms without conflicts + conflict information for unavailable rooms
+    - If event is <24 hours away, marks rooms with capacity < max_capacity * 0.25 as disabled
 
     Args:
         capacity: Required capacity for the event
         event_date: Optional - Event date for conflict checking
         start_time: Optional - Event start time
         duration: Optional - Event duration in minutes
+        max_capacity: Optional - Max capacity for 24-hour rule check
         db: Database session
 
     Returns:
@@ -135,8 +138,19 @@ async def recommend_rooms(
     # Get day of week (0=Monday, 6=Sunday)
     day_of_week = event_date.weekday()
 
+    # Calculate hours until event (24-hour rule check)
+    now = datetime.now()
+    event_datetime_full = datetime.combine(event_date, start_time)
+    hours_until_event = (event_datetime_full - now).total_seconds() / 3600
+
+    # 24-hour rule: If event is less than 24 hours away, minimum room capacity is max_capacity * 0.25
+    min_capacity_for_last_minute = None
+    if max_capacity and hours_until_event < 24:
+        min_capacity_for_last_minute = max_capacity * 0.25
+
     available_rooms = []
     conflicted_rooms = []
+    disabled_rooms = []
     conflicts = []
 
     for room in suitable_rooms:
@@ -218,7 +232,27 @@ async def recommend_rooms(
                     specific_date=event_date
                 ))
 
-        if has_conflict:
+        # Check 24-hour rule
+        is_disabled_by_24h_rule = False
+        disable_reason = None
+        if min_capacity_for_last_minute and room.capacity < min_capacity_for_last_minute:
+            is_disabled_by_24h_rule = True
+            disable_reason = f"Room capacity ({room.capacity}) is less than 25% of max capacity ({int(min_capacity_for_last_minute)}) - Not recommended for events less than 24 hours away"
+
+        if is_disabled_by_24h_rule:
+            # Room is disabled due to 24-hour rule
+            from app.schemas import DisabledRoom
+            disabled_rooms.append(DisabledRoom(
+                id=room.id,
+                name=room.name,
+                capacity=room.capacity,
+                location=room.location,
+                description=room.description,
+                features=room.features,
+                is_available=room.is_available,
+                disable_reason=disable_reason
+            ))
+        elif has_conflict:
             conflicted_rooms.append({
                 "id": room.id,
                 "name": room.name,
@@ -236,14 +270,18 @@ async def recommend_rooms(
         message = f"{len(available_rooms)} conflict-free room(s) found"
     elif conflicted_rooms:
         message = f"No conflict-free rooms available. {len(conflicted_rooms)} room(s) with conflicts (may be overridden by admin/advisor)"
+    elif disabled_rooms:
+        message = f"No recommended rooms available. {len(disabled_rooms)} room(s) disabled due to 24-hour rule"
     else:
         message = f"No rooms found with capacity >= {capacity}"
 
     return RoomRecommendationResponse(
         available_rooms=available_rooms,
         conflicted_rooms=conflicted_rooms if conflicted_rooms else None,
+        disabled_rooms=disabled_rooms if disabled_rooms else None,
         conflicts=conflicts if conflicts else None,
         has_conflicts=len(conflicts) > 0,
+        hours_until_event=hours_until_event if hours_until_event else None,
         message=message
     )
 
