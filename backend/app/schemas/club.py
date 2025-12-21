@@ -26,6 +26,9 @@ class ClubUpdate(BaseModel):
     contact_email: Optional[EmailStr] = None
     manager_id: Optional[int] = None
     advisor_id: Optional[int] = None
+    # NEW - Review6: TWO-WAY MATCHING for sponsorships
+    sponsorship_needs: Optional[str] = None
+    sponsorship_budget_expectation: Optional[str] = None
 
 
 # Schema for club response
@@ -36,6 +39,9 @@ class ClubResponse(ClubBase):
     created_at: datetime
     member_count: int = 0
     follower_count: int = 0
+    # NEW - Review6: TWO-WAY MATCHING for sponsorships
+    sponsorship_needs: Optional[str] = None
+    sponsorship_budget_expectation: Optional[str] = None
 
     class Config:
         from_attributes = True

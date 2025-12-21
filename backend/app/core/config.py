@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # Redis
     REDIS_URL: str = "redis://localhost:6379"
 
+    # OpenAI API (Review6: AI-powered sponsor matching)
+    OPENAI_API_KEY: str
+
     # CORS - will be parsed from comma-separated string in .env
     BACKEND_CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 

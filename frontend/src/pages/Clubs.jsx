@@ -11,23 +11,28 @@ const Clubs = () => {
   const [clubs, setClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showFollowedOnly, setShowFollowedOnly] = useState(false);
+  const [filter, setFilter] = useState('all'); // 'all', 'followed', 'member'
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
   useEffect(() => {
     fetchClubs();
     setCurrentPage(1); // Reset to first page when filter changes
-  }, [showFollowedOnly]);
+  }, [filter]);
 
   const fetchClubs = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const data = showFollowedOnly
-        ? await clubsAPI.getMyFollowedClubs()
-        : await clubsAPI.getAll();
+      let data;
+      if (filter === 'followed') {
+        data = await clubsAPI.getMyFollowedClubs();
+      } else if (filter === 'member') {
+        data = await clubsAPI.getMyMemberClubs();
+      } else {
+        data = await clubsAPI.getAll();
+      }
       setClubs(data);
     } catch (err) {
       setError('Failed to load clubs. Please try again later.');
@@ -49,9 +54,9 @@ const Clubs = () => {
         {isAuthenticated() && (
           <div className="mt-4 flex gap-2">
             <button
-              onClick={() => setShowFollowedOnly(false)}
+              onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                !showFollowedOnly
+                filter === 'all'
                   ? 'bg-red-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
@@ -59,14 +64,24 @@ const Clubs = () => {
               {t('allClubs')}
             </button>
             <button
-              onClick={() => setShowFollowedOnly(true)}
+              onClick={() => setFilter('followed')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                showFollowedOnly
+                filter === 'followed'
                   ? 'bg-red-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
               {t('followedClubs')}
+            </button>
+            <button
+              onClick={() => setFilter('member')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                filter === 'member'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {t('memberClubs')}
             </button>
           </div>
         )}
@@ -122,7 +137,7 @@ const Clubs = () => {
                       </p>
                     )}
 
-                    <div className="flex justify-center gap-4 text-sm text-gray-500">
+                    <div className="flex justify-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path
@@ -132,7 +147,7 @@ const Clubs = () => {
                             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                           />
                         </svg>
-                        {club.member_count || 0} {t('members')}
+                        <span className="font-medium">{club.member_count || 0}</span> {t('members')}
                       </div>
                       <div className="flex items-center">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,7 +158,7 @@ const Clubs = () => {
                             d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
                           />
                         </svg>
-                        {club.follower_count || 0} {t('followers')}
+                        <span className="font-medium">{club.follower_count || 0}</span> {t('followers')}
                       </div>
                     </div>
                   </div>

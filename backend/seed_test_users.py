@@ -26,7 +26,8 @@ from app.core.database import SessionLocal, Base, engine
 from app.models import (
     User, UserRole, Club, Event, EventStatus, Room,
     EventRegistration, Notification, NotificationType,
-    ClubJoinRequest, JoinRequestStatus, RoomSchedule, BlockType
+    ClubJoinRequest, JoinRequestStatus, RoomSchedule, BlockType,
+    SponsorshipRequest, SponsorshipMatch, SponsorshipStatus, SponsorshipType
 )
 from passlib.context import CryptContext
 from sqlalchemy import text
@@ -127,11 +128,31 @@ def create_users(db):
             "role": UserRole.STUDENT
         })
 
+    # 2 Sponsors (Review6: AI-powered sponsor matching system)
+    users_data.extend([
+        {
+            "email": "sponsor1@techcorp.com",
+            "password": "Sponsor123!",
+            "full_name": "Tech Corp Inc.",
+            "student_number": "SPONSOR001",
+            "department": "Corporate Sponsorship",
+            "role": UserRole.SPONSOR
+        },
+        {
+            "email": "sponsor2@innovate.com",
+            "password": "Sponsor456!",
+            "full_name": "Innovate Solutions Ltd.",
+            "student_number": "SPONSOR002",
+            "department": "Corporate Sponsorship",
+            "role": UserRole.SPONSOR
+        },
+    ])
+
     # Save original for credentials file
     users_original = copy.deepcopy(users_data)
 
     users = {}
-    users_by_role = {'admin': [], 'advisor': [], 'club_manager': [], 'student': []}
+    users_by_role = {'admin': [], 'advisor': [], 'club_manager': [], 'student': [], 'sponsor': []}
 
     for user_data in users_data:
         password = user_data.pop("password")
@@ -142,7 +163,7 @@ def create_users(db):
 
     db.commit()
 
-    print(f"   ✅ Created {len(users)} users (2 admins, 5 advisors, 15 managers, 38 students)")
+    print(f"   ✅ Created {len(users)} users (2 admins, 5 advisors, 15 managers, 38 students, 2 sponsors)")
     return users, users_by_role, users_original
 
 
@@ -274,6 +295,62 @@ def create_clubs(db, users_by_role):
 
     print(f"   ✅ Created {len(clubs)} clubs")
     return clubs, clubs_list
+
+
+def update_clubs_with_sponsorship_needs(db, clubs_list):
+    """Update clubs with sponsorship needs and budget expectations (Review6: TWO-WAY MATCHING)"""
+    print("💰 Adding sponsorship needs to clubs...")
+
+    sponsorship_needs_data = {
+        "Computer Science Club": {
+            "sponsorship_needs": "We need funding for hackathon prizes, workshop equipment, and tech conference tickets. Looking for cloud computing credits and development tools.",
+            "sponsorship_budget_expectation": "20,000 - 35,000 TL"
+        },
+        "Robotics Club": {
+            "sponsorship_needs": "Robot parts, sensors, microcontrollers, 3D printing materials, competition entry fees.",
+            "sponsorship_budget_expectation": "25,000 - 40,000 TL"
+        },
+        "AI & Machine Learning Club": {
+            "sponsorship_needs": "GPU access for training, cloud computing credits, AI/ML conference tickets, dataset licenses.",
+            "sponsorship_budget_expectation": "30,000 - 50,000 TL"
+        },
+        "Photography Club": {
+            "sponsorship_needs": "Camera equipment, lenses, lighting gear, photo editing software licenses, exhibition venue.",
+            "sponsorship_budget_expectation": "15,000 - 25,000 TL"
+        },
+        "Music Club": {
+            "sponsorship_needs": "Musical instruments, sound system, recording equipment, concert venue rental.",
+            "sponsorship_budget_expectation": "18,000 - 30,000 TL"
+        },
+        "Theater Club": {
+            "sponsorship_needs": "Stage props, costumes, lighting equipment, theater rental for performances.",
+            "sponsorship_budget_expectation": "12,000 - 22,000 TL"
+        },
+        "Sports Club": {
+            "sponsorship_needs": "Sports equipment, tournament organization, team jerseys, facility rental.",
+            "sponsorship_budget_expectation": "10,000 - 20,000 TL"
+        },
+        "Literature Club": {
+            "sponsorship_needs": "Books for club library, author visit fees, poetry event venue, printing costs for literary magazine.",
+            "sponsorship_budget_expectation": "8,000 - 15,000 TL"
+        },
+        "Chess Club": {
+            "sponsorship_needs": "Chess boards, clocks, tournament entry fees, online training platform subscriptions.",
+            "sponsorship_budget_expectation": "5,000 - 12,000 TL"
+        },
+        "Environmental Club": {
+            "sponsorship_needs": "Eco-friendly materials, campaign materials, tree planting supplies, awareness event organization.",
+            "sponsorship_budget_expectation": "10,000 - 18,000 TL"
+        }
+    }
+
+    for club in clubs_list:
+        if club.name in sponsorship_needs_data:
+            club.sponsorship_needs = sponsorship_needs_data[club.name]["sponsorship_needs"]
+            club.sponsorship_budget_expectation = sponsorship_needs_data[club.name]["sponsorship_budget_expectation"]
+
+    db.commit()
+    print(f"   ✅ Updated {len(clubs_list)} clubs with sponsorship needs")
 
 
 def create_club_memberships(db, clubs_list, users_by_role):
@@ -861,6 +938,7 @@ All passwords meet the security requirements:
 | Advisor | advisor1@gsu.edu.tr | Advisor123! |
 | Club Manager | manager1@gsu.edu.tr | Manager123! |
 | Student | student1@gsu.edu.tr | Student123! |
+| Sponsor | sponsor1@techcorp.com | Sponsor123! |
 
 ---
 
@@ -875,6 +953,7 @@ All passwords meet the security requirements:
     advisors = [u for u in users_original if u['role'] == UserRole.ADVISOR]
     managers = [u for u in users_original if u['role'] == UserRole.CLUB_MANAGER]
     students = [u for u in users_original if u['role'] == UserRole.STUDENT]
+    sponsors = [u for u in users_original if u['role'] == UserRole.SPONSOR]
 
     for i, user in enumerate(admins, 1):
         content += f"{i}. **{user['full_name']}** - `{user['email']}` / `{user['password']}`\n"
@@ -890,6 +969,10 @@ All passwords meet the security requirements:
     content += f"\n### Students ({len(students)})\n\n"
     for i, user in enumerate(students, 1):
         content += f"{i}. **{user['full_name']}** ({user['department']}) - `{user['email']}` / `{user['password']}`\n"
+
+    content += f"\n### Sponsors ({len(sponsors)}) - Review6: AI-Powered Sponsor Matching\n\n"
+    for i, user in enumerate(sponsors, 1):
+        content += f"{i}. **{user['full_name']}** - `{user['email']}` / `{user['password']}`\n"
 
     content += """\n---
 
@@ -960,6 +1043,98 @@ When creating new users, passwords must contain:
     print(f"\n📄 Created {credentials_path}")
 
 
+def create_sponsorships(db, clubs_list, users_by_role):
+    """Create sponsorship requests and AI matches (Review6: AI-powered sponsor matching)"""
+    print("🤝 Creating sponsorship applications and matches...")
+
+    sponsors = users_by_role.get('sponsor', [])
+    if not sponsors or len(sponsors) < 2:
+        print("   ⚠️  No sponsor users found, skipping sponsorship creation")
+        return []
+
+    # Sponsorship Request 1: APPROVED with AI matches
+    approved_sponsorship = SponsorshipRequest(
+        sponsor_id=sponsors[0].id,
+        company_name="Tech Corp Inc.",
+        contact_info="contact@techcorp.com | +90 212 555 0001 | www.techcorp.com",
+        vision="Empowering the next generation of tech innovators through education and hands-on experience.",
+        sponsorship_goals="We want to sponsor hackathons, coding workshops, AI/ML projects, and robotics competitions. Interested in supporting tech-focused student clubs.",
+        sponsorship_type=SponsorshipType.CORPORATE,
+        budget_range="25,000 - 40,000 TL",
+        status=SponsorshipStatus.APPROVED,
+        approved_at=datetime.now(timezone.utc)
+    )
+    db.add(approved_sponsorship)
+    db.flush()  # Get ID for matches
+
+    # Create AI matches for approved sponsorship (simulate AI matching)
+    # Top 3 matches based on TWO-WAY MATCHING algorithm
+    matches_data = [
+        {
+            "club_name": "Robotics Club",
+            "rank": 1,
+            "reasoning": "🥇 **Perfect Match (95% compatibility)**\n\n**Topic Alignment (40%):** Excellent - Sponsor focuses on tech innovation, robotics is core tech. Keywords match: 'robotics competitions', 'hands-on experience'.\n\n**Budget Compatibility (50%):** Perfect - Sponsor budget 25-40K TL perfectly covers club's 25-40K TL needs. No mismatch.\n\n**Activity Level (10%):** High - Club actively participates in competitions, high member engagement."
+        },
+        {
+            "club_name": "AI & Machine Learning Club",
+            "rank": 2,
+            "reasoning": "🥈 **Excellent Match (92% compatibility)**\n\n**Topic Alignment (40%):** Excellent - Direct match with sponsor's AI/ML project interests. Perfect keyword alignment.\n\n**Budget Compatibility (50%):** Good - Club needs 30-50K TL, sponsor offers 25-40K TL. Slight stretch but viable with negotiation.\n\n**Activity Level (10%):** High - Active in workshops and projects."
+        },
+        {
+            "club_name": "Computer Science Club",
+            "rank": 3,
+            "reasoning": "🥉 **Strong Match (88% compatibility)**\n\n**Topic Alignment (40%):** Strong - Hackathons and coding workshops align with sponsor goals. Tech-focused club.\n\n**Budget Compatibility (50%):** Excellent - Club needs 20-35K TL, sponsor offers 25-40K TL. Perfect overlap.\n\n**Activity Level (10%):** High - Regular hackathons and workshops."
+        }
+    ]
+
+    for match_data in matches_data:
+        # Find club by name
+        club = next((c for c in clubs_list if c.name == match_data["club_name"]), None)
+        if club:
+            match = SponsorshipMatch(
+                sponsorship_request_id=approved_sponsorship.id,
+                club_id=club.id,
+                match_rank=match_data["rank"],
+                ai_reasoning=match_data["reasoning"]
+            )
+            db.add(match)
+
+    # Sponsorship Request 2: PENDING (awaiting admin approval)
+    pending_sponsorship = SponsorshipRequest(
+        sponsor_id=sponsors[1].id,
+        company_name="Innovate Solutions Ltd.",
+        contact_info="info@innovate.com | +90 212 555 0002 | www.innovate.com",
+        vision="Fostering creativity and innovation in arts and sports through strategic partnerships.",
+        sponsorship_goals="Looking to sponsor music concerts, theater performances, photography exhibitions, and sports tournaments. Focus on creative and athletic clubs.",
+        sponsorship_type=SponsorshipType.CORPORATE,
+        budget_range="15,000 - 25,000 TL",
+        status=SponsorshipStatus.PENDING
+    )
+    db.add(pending_sponsorship)
+
+    # Sponsorship Request 3: REJECTED (example of rejection)
+    rejected_sponsorship = SponsorshipRequest(
+        sponsor_id=sponsors[0].id,
+        company_name="Small Startup Co.",
+        contact_info="contact@smallstartup.com | +90 212 555 0003",
+        vision="Supporting student initiatives with minimal budget.",
+        sponsorship_goals="General support for any club activities.",
+        sponsorship_type=SponsorshipType.INDIVIDUAL,
+        budget_range="1,000 - 3,000 TL",
+        status=SponsorshipStatus.REJECTED,
+        rejection_reason="Budget too small to meet any club's needs. Minimum club budget expectations start at 5,000 TL. Please consider reapplying with increased budget allocation.",
+        approved_at=datetime.now(timezone.utc) - timedelta(days=2)
+    )
+    db.add(rejected_sponsorship)
+
+    db.commit()
+
+    total_matches = len(matches_data)
+    print(f"   ✅ Created 3 sponsorship requests (1 approved with {total_matches} AI matches, 1 pending, 1 rejected)")
+
+    return [approved_sponsorship, pending_sponsorship, rejected_sponsorship]
+
+
 def create_test_data():
     """Create comprehensive test data"""
     print("🌱 Seeding database with comprehensive test data...\n")
@@ -977,6 +1152,8 @@ def create_test_data():
         db.query(EventRegistration).delete()
         db.query(Notification).delete()
         db.query(ClubJoinRequest).delete()
+        db.query(SponsorshipMatch).delete()  # Review6: Clean sponsorship matches before requests (FK dependency)
+        db.query(SponsorshipRequest).delete()  # Review6: Clean sponsorship requests before clubs (FK dependency)
         db.query(RoomSchedule).delete()  # Clean schedules before events (FK dependency)
         db.query(Event).delete()
         db.query(Room).delete()
@@ -991,12 +1168,14 @@ def create_test_data():
         users, users_by_role, users_original = create_users(db)
         rooms = create_rooms(db)
         clubs, clubs_list = create_clubs(db, users_by_role)
+        update_clubs_with_sponsorship_needs(db, clubs_list)  # Review6: Add sponsorship needs
         create_club_memberships(db, clubs_list, users_by_role)
         create_follows(db, clubs_list, users_by_role)
         create_weekly_schedules(db, rooms, users_by_role)  # Create weekly class schedules BEFORE events
         events = create_events(db, clubs_list, rooms, users_by_role)
         create_registrations(db, events, users_by_role)
         create_notifications(db, users_by_role, events)
+        sponsorships = create_sponsorships(db, clubs_list, users_by_role)  # Review6: Create sponsorships
 
         # 3. Create credentials file
         create_credentials_file(users_original, clubs_list)
@@ -1004,7 +1183,7 @@ def create_test_data():
         # 4. Summary
         print("\n✨ Database seeding completed successfully!\n")
         print("📊 Summary:")
-        print(f"  - Users: {len(users)} (2 admins, 5 advisors, 15 managers, 38 students)")
+        print(f"  - Users: {len(users)} (2 admins, 5 advisors, 15 managers, 38 students, 2 sponsors)")
         print(f"  - Rooms: {len(rooms)}")
         print(f"  - Clubs: {len(clubs_list)}")
         print(f"  - Events: {len(events)}")
@@ -1012,6 +1191,8 @@ def create_test_data():
         print(f"  - Event Registrations: {db.query(EventRegistration).count()}")
         print(f"  - Follow Relationships: {db.execute(text('SELECT COUNT(*) FROM user_club_association')).scalar()}")
         print(f"  - Notifications: {db.query(Notification).count()}")
+        print(f"  - Sponsorship Requests: {db.query(SponsorshipRequest).count()} (1 approved, 1 pending, 1 rejected)")
+        print(f"  - AI Sponsorship Matches: {db.query(SponsorshipMatch).count()} matches for approved sponsorship")
         print(f"\n📝 Check TEST_CREDENTIALS.md for login details")
 
     except Exception as e:

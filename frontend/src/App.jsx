@@ -23,6 +23,7 @@ import AdminPanel from './pages/AdminPanel';
 import AdminClubManagement from './pages/AdminClubManagement';
 import ScheduleManagement from './pages/ScheduleManagement';
 import RoomManagement from './pages/RoomManagement';
+import SponsorshipManagement from './pages/SponsorshipManagement';
 
 function App() {
   return (
@@ -164,6 +165,14 @@ function App() {
                 element={
                   <ProtectedRoute roles={['admin']}>
                     <RoomManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/sponsorship-management"
+                element={
+                  <ProtectedRoute roles={['sponsor']}>
+                    <SponsorshipManagement />
                   </ProtectedRoute>
                 }
               />

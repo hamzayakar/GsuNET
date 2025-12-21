@@ -14,6 +14,7 @@ class UserRole(str, enum.Enum):
     CLUB_MANAGER = "club_manager"
     ADVISOR = "advisor"
     ADMIN = "admin"
+    SPONSOR = "sponsor"  # NEW - Review6: Sponsorship matching system
 
 
 # Association table for user-club many-to-many relationship

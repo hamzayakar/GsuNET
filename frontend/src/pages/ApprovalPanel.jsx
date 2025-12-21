@@ -1,71 +1,150 @@
+/**
+ * Approval Panel - Events & Sponsorships
+ * Review6: Enhanced with Sponsorship Approval Tab
+ *
+ * Admin/Advisor panel for approving/rejecting:
+ * - Events (existing)
+ * - Sponsorship Requests (NEW - Review6)
+ */
 import { useState, useEffect } from 'react';
-import { eventsAPI } from '../services/api';
+import { eventsAPI, sponsorshipsAPI } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import toast from 'react-hot-toast';
 
 const ApprovalPanel = () => {
   const { t } = useLanguage();
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [processingId, setProcessingId] = useState(null);
-  const [filter, setFilter] = useState('pending'); // 'pending' or 'rejected'
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState('events'); // 'events' or 'sponsorships'
+
+  // Events state
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState('');
+  const [eventsProcessingId, setEventsProcessingId] = useState(null);
+  const [eventsFilter, setEventsFilter] = useState('pending'); // 'pending' or 'rejected'
+
+  // Sponsorships state
+  const [sponsorships, setSponsorships] = useState([]);
+  const [sponsorshipsLoading, setSponsorshipsLoading] = useState(false);
+  const [sponsorshipsError, setSponsorshipsError] = useState('');
+  const [sponsorshipsProcessingId, setSponsorshipsProcessingId] = useState(null);
+
+  // Fetch initial counts on mount
   useEffect(() => {
     fetchEvents();
-  }, [filter]);
+    fetchSponsorships();
+  }, []);
+
+  // Fetch on tab/filter change
+  useEffect(() => {
+    if (activeTab === 'events') {
+      fetchEvents();
+    } else if (activeTab === 'sponsorships') {
+      fetchSponsorships();
+    }
+  }, [activeTab, eventsFilter]);
+
+  // ========================================
+  // EVENTS FUNCTIONS
+  // ========================================
 
   const fetchEvents = async () => {
-    setLoading(true);
-    setError('');
+    setEventsLoading(true);
+    setEventsError('');
 
     try {
-      const data = await eventsAPI.getAll({ status: filter });
+      const data = await eventsAPI.getAll({ status: eventsFilter });
       setEvents(data);
     } catch (err) {
-      setError(`Failed to load ${filter} events. Please try again later.`);
+      setEventsError(`Failed to load ${eventsFilter} events. Please try again later.`);
       console.error('Error fetching events:', err);
     } finally {
-      setLoading(false);
+      setEventsLoading(false);
     }
   };
 
-  const handleApproval = async (eventId, status, rejectionReason = null) => {
-    setProcessingId(eventId);
-    setError('');
+  const handleEventApproval = async (eventId, status, rejectionReason = null) => {
+    setEventsProcessingId(eventId);
+    setEventsError('');
 
     try {
       await eventsAPI.approve(eventId, status, rejectionReason);
-      // Show success toast for approval
       if (status === 'approved') {
         toast.success(t('eventApproved'));
       }
-      // Remove the event from the list after approval/rejection/un-rejection
       setEvents(events.filter((event) => event.id !== eventId));
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to process event. Please try again.');
+      setEventsError(err.response?.data?.detail || 'Failed to process event. Please try again.');
     } finally {
-      setProcessingId(null);
+      setEventsProcessingId(null);
     }
   };
 
   const handleUnreject = async (eventId) => {
-    setProcessingId(eventId);
-    setError('');
+    setEventsProcessingId(eventId);
+    setEventsError('');
 
     try {
-      // Change status back to pending
       await eventsAPI.approve(eventId, 'pending', null);
-      // Remove from rejected list
       setEvents(events.filter((event) => event.id !== eventId));
       toast.success(t('eventUnrejected'));
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to un-reject event. Please try again.');
+      setEventsError(err.response?.data?.detail || 'Failed to un-reject event. Please try again.');
       toast.error(err.response?.data?.detail || 'Failed to un-reject event');
     } finally {
-      setProcessingId(null);
+      setEventsProcessingId(null);
     }
   };
+
+  // ========================================
+  // SPONSORSHIPS FUNCTIONS (NEW - Review6)
+  // ========================================
+
+  const fetchSponsorships = async () => {
+    setSponsorshipsLoading(true);
+    setSponsorshipsError('');
+
+    try {
+      const response = await sponsorshipsAPI.getPendingApplications();
+      setSponsorships(response.data);
+    } catch (err) {
+      setSponsorshipsError('Failed to load sponsorship requests. Please try again later.');
+      console.error('Error fetching sponsorships:', err);
+    } finally {
+      setSponsorshipsLoading(false);
+    }
+  };
+
+  const handleSponsorshipReview = async (requestId, status, rejectionReason = null) => {
+    setSponsorshipsProcessingId(requestId);
+    setSponsorshipsError('');
+
+    try {
+      await sponsorshipsAPI.reviewApplication(requestId, {
+        status,
+        rejection_reason: rejectionReason
+      });
+
+      if (status === 'approved') {
+        toast.success(t('sponsorshipApproved') || 'Sponsorship approved! AI matching in progress...');
+      } else {
+        toast.success(t('sponsorshipRejected') || 'Sponsorship rejected');
+      }
+
+      // Remove from list
+      setSponsorships(sponsorships.filter((s) => s.id !== requestId));
+    } catch (err) {
+      setSponsorshipsError(err.response?.data?.detail || 'Failed to process sponsorship. Please try again.');
+      toast.error(err.response?.data?.detail || 'Failed to process sponsorship');
+    } finally {
+      setSponsorshipsProcessingId(null);
+    }
+  };
+
+  // ========================================
+  // UTILITY FUNCTIONS
+  // ========================================
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -78,246 +157,347 @@ const ApprovalPanel = () => {
     }).format(date);
   };
 
+  // ========================================
+  // RENDER
+  // ========================================
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">{t('eventApprovalPanel')}</h1>
+        <h1 className="text-3xl font-bold text-gray-900">
+          {t('approvalPanel') || 'Approval Panel'}
+        </h1>
         <p className="mt-2 text-gray-600">
-          {t('reviewManageRequests')}
+          {t('approvalPanelDescription') || 'Review and manage pending requests'}
         </p>
 
-        {/* Filter Buttons */}
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={() => setFilter('pending')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === 'pending'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            {t('pendingEvents')}
-          </button>
-          <button
-            onClick={() => setFilter('rejected')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              filter === 'rejected'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            {t('rejectedEvents')}
-          </button>
+        {/* Tab Navigation (NEW - Review6) */}
+        <div className="mt-6 border-b border-gray-200">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('events')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'events'
+                  ? 'border-red-600 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {t('events') || 'Events'} ({events.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('sponsorships')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'sponsorships'
+                  ? 'border-red-600 text-red-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {t('sponsorshipsTab') || 'Sponsorships'} ({sponsorships.length})
+            </button>
+          </nav>
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md mb-6">
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      ) : events.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg shadow-md">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            {filter === 'pending' ? t('noPendingEvents') : t('noRejectedEvents')}
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {filter === 'pending'
-              ? t('noEventsPending')
-              : t('noEventsRejected')}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {events.map((event) => (
-            <div
-              key={event.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden"
+      {/* ========================================
+          EVENTS TAB CONTENT
+          ======================================== */}
+      {activeTab === 'events' && (
+        <>
+          {/* Filter Buttons */}
+          <div className="mb-6 flex gap-2">
+            <button
+              onClick={() => setEventsFilter('pending')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                eventsFilter === 'pending'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
             >
-              <div className="p-6">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {event.title}
-                      </h3>
-                      <span className={`ml-2 px-3 py-1 text-xs font-semibold rounded-full ${
-                        filter === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {filter === 'pending' ? t('pending') : t('rejected')}
-                      </span>
-                    </div>
+              {t('pendingEvents')}
+            </button>
+            <button
+              onClick={() => setEventsFilter('rejected')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                eventsFilter === 'rejected'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {t('rejectedEvents')}
+            </button>
+          </div>
 
-                    {event.description && (
-                      <p className="text-gray-600 mb-4">{event.description}</p>
-                    )}
+          {eventsError && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md mb-6">
+              {eventsError}
+            </div>
+          )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500 mb-4">
-                      {event.club && (
-                        <div className="flex items-center">
-                          <svg
-                            className="w-4 h-4 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+          {eventsLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow-md">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                {eventsFilter === 'pending' ? t('noPendingEvents') : t('noRejectedEvents')}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {eventsFilter === 'pending' ? t('noEventsPending') : t('noEventsRejected')}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {events.map((event) => (
+                <div
+                  key={event.id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden"
+                >
+                  <div className="p-6">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                          <h3 className="text-xl font-bold text-gray-900 mb-2">
+                            {event.title}
+                          </h3>
+                          <span
+                            className={`ml-2 px-3 py-1 text-xs font-semibold rounded-full ${
+                              eventsFilter === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                            />
-                          </svg>
-                          <span className="font-medium">{t('club')}:</span>
-                          <span className="ml-1">{event.club.name}</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center">
-                        <svg
-                          className="w-4 h-4 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                          />
-                        </svg>
-                        <span className="font-medium">{t('date')}:</span>
-                        <span className="ml-1">{formatDate(event.event_datetime)}</span>
-                      </div>
-
-                      {event.room && (
-                        <div className="flex items-center">
-                          <svg
-                            className="w-4 h-4 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                          </svg>
-                          <span className="font-medium">{t('room')}:</span>
-                          <span className="ml-1">
-                            {event.room.name} ({t('capacity')}: {event.room.capacity})
+                            {eventsFilter === 'pending' ? t('pending') : t('rejected')}
                           </span>
                         </div>
-                      )}
 
-                      {event.expected_attendees && (
-                        <div className="flex items-center">
-                          <svg
-                            className="w-4 h-4 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                            />
-                          </svg>
-                          <span className="font-medium">{t('expectedAttendees')}:</span>
-                          <span className="ml-1">{event.expected_attendees}</span>
+                        {event.description && (
+                          <p className="text-gray-600 mb-4">{event.description}</p>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500 mb-4">
+                          {event.club && (
+                            <div className="flex items-center">
+                              <span className="font-medium">{t('club')}:</span>
+                              <span className="ml-1">{event.club.name}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center">
+                            <span className="font-medium">{t('date')}:</span>
+                            <span className="ml-1">{formatDate(event.event_datetime)}</span>
+                          </div>
+                          {event.room && (
+                            <div className="flex items-center">
+                              <span className="font-medium">{t('room')}:</span>
+                              <span className="ml-1">
+                                {event.room.name} ({t('capacity')}: {event.room.capacity})
+                              </span>
+                            </div>
+                          )}
+                          {event.expected_attendees && (
+                            <div className="flex items-center">
+                              <span className="font-medium">{t('expectedAttendees')}:</span>
+                              <span className="ml-1">{event.expected_attendees}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
 
-                    {/* Rejection Information (for rejected events) */}
-                    {filter === 'rejected' && (
-                      <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
-                        <div className="flex items-start gap-2 mb-2">
-                          <svg className="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <div className="flex-1">
-                            <h4 className="text-sm font-semibold text-red-900">{t('rejectionInfo')}</h4>
+                        {eventsFilter === 'rejected' && (
+                          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                            <h4 className="text-sm font-semibold text-red-900">
+                              {t('rejectionInfo')}
+                            </h4>
                             <p className="text-sm text-red-700 mt-1">
                               {event.rejection_reason || t('noReasonProvided')}
                             </p>
                           </div>
-                        </div>
-                        {event.updated_at && (
-                          <p className="text-xs text-red-600 mt-2">
-                            <span className="font-medium">{t('rejectedOn')}</span> {formatDate(event.updated_at)}
-                          </p>
                         )}
                       </div>
-                    )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-gray-200">
+                      {eventsFilter === 'pending' ? (
+                        <>
+                          <button
+                            onClick={() => handleEventApproval(event.id, 'approved')}
+                            disabled={eventsProcessingId === event.id}
+                            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {eventsProcessingId === event.id ? t('processing') : t('approve')}
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              const reason = prompt(t('enterRejectionReason'));
+                              if (reason !== null) {
+                                handleEventApproval(event.id, 'rejected', reason || null);
+                                toast.success('Event rejected');
+                              }
+                            }}
+                            disabled={eventsProcessingId === event.id}
+                            className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {t('reject')}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => handleUnreject(event.id)}
+                          disabled={eventsProcessingId === event.id}
+                          className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {eventsProcessingId === event.id ? t('processing') : t('returnToPending')}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 mt-4 pt-4 border-t border-gray-200">
-                  {filter === 'pending' ? (
-                    <>
+      {/* ========================================
+          SPONSORSHIPS TAB CONTENT (NEW - Review6)
+          ======================================== */}
+      {activeTab === 'sponsorships' && (
+        <>
+          {sponsorshipsError && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md mb-6">
+              {sponsorshipsError}
+            </div>
+          )}
+
+          {sponsorshipsLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+            </div>
+          ) : sponsorships.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-lg shadow-md">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">
+                {t('noPendingSponsorships') || 'No Pending Sponsorships'}
+              </h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {t('allSponsorshipsReviewed') || 'All sponsorship requests have been reviewed'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {sponsorships.map((sponsorship) => (
+                <div
+                  key={sponsorship.id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden"
+                >
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {sponsorship.company_name}
+                      </h3>
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        {t('pending') || 'Pending'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Vision */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                          {t('companyVision') || 'Vision/Mission'}
+                        </h4>
+                        <p className="text-sm text-gray-600">{sponsorship.vision}</p>
+                      </div>
+
+                      {/* Goals */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                          {t('sponsorshipGoals') || 'Sponsorship Goals'}
+                        </h4>
+                        <p className="text-sm text-gray-600">{sponsorship.sponsorship_goals}</p>
+                      </div>
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">{t('type') || 'Type'}:</span>
+                          <span className="ml-2 text-gray-600 capitalize">{sponsorship.sponsorship_type}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">{t('budget') || 'Budget'}:</span>
+                          <span className="ml-2 text-gray-600">{sponsorship.budget_range || '-'}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">{t('contact') || 'Contact'}:</span>
+                          <span className="ml-2 text-gray-600 truncate">{sponsorship.contact_info}</span>
+                        </div>
+                      </div>
+
+                      {/* Submitted Date */}
+                      <div className="text-xs text-gray-500">
+                        {t('submitted') || 'Submitted'}: {formatDate(sponsorship.created_at)}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-4 border-t border-gray-200">
                       <button
-                        onClick={() => handleApproval(event.id, 'approved')}
-                        disabled={processingId === event.id}
+                        onClick={() => handleSponsorshipReview(sponsorship.id, 'approved')}
+                        disabled={sponsorshipsProcessingId === sponsorship.id}
                         className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        {processingId === event.id ? t('processing') : t('approve')}
+                        {sponsorshipsProcessingId === sponsorship.id ? (
+                          <>{t('processing') || 'Processing...'}</>
+                        ) : (
+                          <>{t('approveAndMatch') || 'Approve & Match with AI'}</>
+                        )}
                       </button>
 
                       <button
                         onClick={() => {
-                          const reason = prompt(t('enterRejectionReason'));
+                          const reason = prompt(t('enterRejectionReason') || 'Enter rejection reason (optional):');
                           if (reason !== null) {
-                            handleApproval(event.id, 'rejected', reason || null);
-                            toast.success('Event rejected');
+                            handleSponsorshipReview(sponsorship.id, 'rejected', reason || null);
                           }
                         }}
-                        disabled={processingId === event.id}
+                        disabled={sponsorshipsProcessingId === sponsorship.id}
                         className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
-                        {t('reject')}
+                        {t('reject') || 'Reject'}
                       </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => handleUnreject(event.id)}
-                      disabled={processingId === event.id}
-                      className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                      {processingId === event.id ? t('processing') : t('returnToPending')}
-                    </button>
-                  )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );

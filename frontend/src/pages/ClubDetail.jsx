@@ -193,9 +193,12 @@ const ClubDetail = () => {
                   {club.manager_id === user.id ? t('clubManager') : t('advisor')}
                 </span>
               ) : isMember ? (
-                <span className="px-6 py-2 rounded-md font-medium bg-blue-100 text-blue-800">
-                  {t('member')}
-                </span>
+                <button
+                  disabled
+                  className="px-6 py-2 rounded-md font-medium bg-blue-100 text-blue-800 cursor-not-allowed opacity-75"
+                >
+                  {t('alreadyMember') || 'Already a Member'}
+                </button>
               ) : joinRequest ? (
                 <button
                   onClick={handleCancelRequest}

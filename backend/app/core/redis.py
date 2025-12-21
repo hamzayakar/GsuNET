@@ -52,3 +52,7 @@ async def close_redis_pool():
     if _redis_pool is not None:
         await _redis_pool.close()
         _redis_pool = None
+
+
+# Alias for backward compatibility (Review6)
+get_arq_pool = get_redis_pool

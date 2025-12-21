@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.core.redis import get_redis_pool, close_redis_pool
-from app.routes import auth, events, rooms, clubs, registrations, notifications, users, club_join_requests, schedule
+from app.routes import auth, events, rooms, clubs, registrations, notifications, users, club_join_requests, schedule, sponsorships
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,7 @@ app.include_router(notifications.router, prefix=settings.API_V1_STR)
 app.include_router(users.router, prefix=settings.API_V1_STR)
 app.include_router(club_join_requests.router, prefix=settings.API_V1_STR)
 app.include_router(schedule.router, prefix=settings.API_V1_STR)
+app.include_router(sponsorships.router)  # Review6: Sponsor matching system
 
 
 # Startup and shutdown events

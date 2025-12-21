@@ -65,6 +65,7 @@ const AdminPanel = () => {
       advisor: 'bg-purple-100 text-purple-800',
       club_manager: 'bg-blue-100 text-blue-800',
       student: 'bg-green-100 text-green-800',
+      sponsor: 'bg-yellow-100 text-yellow-800',
     };
     return colors[role] || 'bg-gray-100 text-gray-800';
   };
@@ -112,6 +113,7 @@ const AdminPanel = () => {
                 <option value="advisor">{t('advisor')}</option>
                 <option value="club_manager">{t('club_manager')}</option>
                 <option value="student">{t('student')}</option>
+                <option value="sponsor">{t('sponsor')}</option>
               </select>
             </div>
 
@@ -231,6 +233,7 @@ const AdminPanel = () => {
                             <option value="student">{t('student')}</option>
                             <option value="club_manager">{t('club_manager')}</option>
                             <option value="advisor">{t('advisor')}</option>
+                            <option value="sponsor">{t('sponsor')}</option>
                             <option value="admin">{t('admin')}</option>
                           </select>
                         </td>

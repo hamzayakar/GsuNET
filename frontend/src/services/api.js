@@ -203,6 +203,11 @@ export const clubsAPI = {
     return response.data;
   },
 
+  getMyMemberClubs: async () => {
+    const response = await api.get('/users/me/member-clubs');
+    return response.data;
+  },
+
   getMembers: async (id) => {
     const response = await api.get(`/clubs/${id}/members`);
     return response.data;
@@ -352,6 +357,45 @@ export const clubJoinRequestsAPI = {
   // Cancel a pending join request
   cancel: async (requestId) => {
     const response = await api.delete(`/club-join-requests/${requestId}`);
+    return response.data;
+  },
+};
+
+// Sponsorships API (Review6: AI-powered sponsor matching)
+export const sponsorshipsAPI = {
+  // Create sponsorship application (sponsor role)
+  createApplication: async (applicationData) => {
+    const response = await api.post('/sponsorships/apply', applicationData);
+    return response;
+  },
+
+  // Get my applications (sponsor role)
+  getMyApplications: async () => {
+    const response = await api.get('/sponsorships/my-applications');
+    return response;
+  },
+
+  // Get pending applications (admin/advisor role)
+  getPendingApplications: async () => {
+    const response = await api.get('/sponsorships/pending');
+    return response;
+  },
+
+  // Review application - approve/reject (admin role)
+  reviewApplication: async (requestId, reviewData) => {
+    const response = await api.put(`/sponsorships/${requestId}/review`, reviewData);
+    return response.data;
+  },
+
+  // Get matches for my club (club_manager/advisor role)
+  getMyClubMatches: async () => {
+    const response = await api.get('/sponsorships/matches/my-club');
+    return response.data;
+  },
+
+  // Get sponsorship details (authorized users)
+  getDetails: async (requestId) => {
+    const response = await api.get(`/sponsorships/${requestId}/details`);
     return response.data;
   },
 };

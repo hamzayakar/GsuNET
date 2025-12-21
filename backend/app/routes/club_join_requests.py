@@ -49,6 +49,19 @@ async def create_join_request(
             detail="You cannot request to join a club you manage or advise"
         )
 
+    # Check if user is already a member (approved request)
+    existing_member = db.query(ClubJoinRequest).filter(
+        ClubJoinRequest.user_id == current_user.id,
+        ClubJoinRequest.club_id == request_data.club_id,
+        ClubJoinRequest.status == JoinRequestStatus.APPROVED
+    ).first()
+
+    if existing_member:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You are already a member of this club"
+        )
+
     # Check if user already has a pending request for this club
     existing_request = db.query(ClubJoinRequest).filter(
         ClubJoinRequest.user_id == current_user.id,

@@ -93,7 +93,9 @@ async def list_clubs(
             advisor_id=club.advisor_id,
             created_at=club.created_at,
             member_count=member_count,
-            follower_count=follower_count
+            follower_count=follower_count,
+            sponsorship_needs=club.sponsorship_needs,
+            sponsorship_budget_expectation=club.sponsorship_budget_expectation
         ))
 
     return result
@@ -145,7 +147,9 @@ async def get_club(
         advisor_id=club.advisor_id,
         created_at=club.created_at,
         member_count=member_count,
-        follower_count=follower_count
+        follower_count=follower_count,
+        sponsorship_needs=club.sponsorship_needs,
+        sponsorship_budget_expectation=club.sponsorship_budget_expectation
     )
 
 
@@ -389,7 +393,9 @@ async def get_my_followed_clubs(
             advisor_id=club.advisor_id,
             created_at=club.created_at,
             member_count=member_count,
-            follower_count=follower_count
+            follower_count=follower_count,
+            sponsorship_needs=club.sponsorship_needs,
+            sponsorship_budget_expectation=club.sponsorship_budget_expectation
         ))
 
     return result
@@ -438,7 +444,67 @@ async def get_my_managed_clubs(
             advisor_id=club.advisor_id,
             created_at=club.created_at,
             member_count=member_count,
-            follower_count=follower_count
+            follower_count=follower_count,
+            sponsorship_needs=club.sponsorship_needs,
+            sponsorship_budget_expectation=club.sponsorship_budget_expectation
+        ))
+
+    return result
+
+
+@user_clubs_router.get("/me/member-clubs", response_model=List[ClubResponse])
+async def get_my_member_clubs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get clubs where current user is an approved member
+
+    Args:
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        List of clubs user is a member of
+    """
+    from app.models import ClubJoinRequest, JoinRequestStatus
+
+    # Get approved join requests for current user
+    approved_requests = db.query(ClubJoinRequest).filter(
+        ClubJoinRequest.user_id == current_user.id,
+        ClubJoinRequest.status == JoinRequestStatus.APPROVED
+    ).all()
+
+    # Get club IDs from approved requests
+    club_ids = [req.club_id for req in approved_requests]
+
+    # Get clubs
+    member_clubs = db.query(Club).filter(Club.id.in_(club_ids)).all()
+
+    # Enrich with counts
+    result = []
+    for club in member_clubs:
+        # Count approved join requests as members
+        member_count = db.query(ClubJoinRequest).filter(
+            ClubJoinRequest.club_id == club.id,
+            ClubJoinRequest.status == JoinRequestStatus.APPROVED
+        ).count()
+
+        # Count followers
+        follower_count = len(club.followers)
+
+        result.append(ClubResponse(
+            id=club.id,
+            name=club.name,
+            description=club.description,
+            contact_email=club.contact_email,
+            manager_id=club.manager_id,
+            advisor_id=club.advisor_id,
+            created_at=club.created_at,
+            member_count=member_count,
+            follower_count=follower_count,
+            sponsorship_needs=club.sponsorship_needs,
+            sponsorship_budget_expectation=club.sponsorship_budget_expectation
         ))
 
     return result

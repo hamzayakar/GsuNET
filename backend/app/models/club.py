@@ -17,6 +17,10 @@ class Club(Base):
     description = Column(Text, nullable=True)
     contact_email = Column(String, nullable=True)
 
+    # Sponsorship needs (NEW - Review6: TWO-WAY MATCHING)
+    sponsorship_needs = Column(Text, nullable=True)  # What the club is looking for
+    sponsorship_budget_expectation = Column(String(100), nullable=True)  # Expected budget range
+
     # Foreign keys
     manager_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     advisor_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
