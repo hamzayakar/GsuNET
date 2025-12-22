@@ -249,13 +249,47 @@ const ClubManagement = () => {
     e.preventDefault();
     setLoadingEvent(true);
 
+    // Validate room selection (can be selected via dropdown OR button)
+    if (!formData.room_id || formData.room_id === '') {
+      toast.error(t('selectRoom') || 'Please select a room');
+      setLoadingEvent(false);
+      return;
+    }
+
+    // Check if selected room has conflicts and prepare conflict info for admin/advisor
+    const selectedRoomId = parseInt(formData.room_id);
+    const hasConflict = conflictedRooms.some(room => room.id === selectedRoomId);
+    const isDisabledRoom = disabledRooms.some(room => room.id === selectedRoomId);
+
+    let conflictNote = '';
+    if (hasConflict) {
+      const roomConflicts = conflicts.filter(c => c.room_id === selectedRoomId);
+      conflictNote = '\n\n⚠️ SCHEDULE CONFLICT - Manager Override:\n';
+      roomConflicts.forEach(conflict => {
+        conflictNote += `• ${conflict.conflict_type}: ${conflict.conflict_title} (${conflict.time_range})`;
+        if (conflict.is_recurring) conflictNote += ' - Weekly';
+        conflictNote += '\n';
+      });
+      conflictNote += 'Manager has chosen to proceed despite conflict. Advisor approval required.';
+    } else if (isDisabledRoom) {
+      const disabledRoom = disabledRooms.find(room => room.id === selectedRoomId);
+      conflictNote = `\n\n⚠️ ROOM SIZE EXCEPTION:\n${disabledRoom.disable_reason}`;
+      if (hoursUntilEvent !== null && hoursUntilEvent < 24) {
+        conflictNote += `\nLast-minute booking exception applied (${Math.round(hoursUntilEvent)} hours until event).`;
+      }
+    }
+
+    // Append conflict note to description
+    const finalDescription = formData.description + conflictNote;
+
     try {
       await eventsAPI.create({
         ...formData,
+        description: finalDescription,
         club_id: selectedClubId,
         expected_capacity: parseInt(formData.expected_capacity),
         max_capacity: parseInt(formData.max_capacity),
-        room_id: parseInt(formData.room_id),
+        room_id: selectedRoomId,
         duration: parseInt(formData.duration)
       });
 
@@ -605,9 +639,13 @@ const ClubManagement = () => {
                   type="datetime-local"
                   value={formData.event_datetime}
                   onChange={(e) => setFormData({ ...formData, event_datetime: e.target.value })}
+                  min={new Date().toISOString().slice(0, 16)}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  {t('future_date_only') || 'Past dates cannot be selected'}
+                </p>
               </div>
 
               <div>
@@ -701,11 +739,10 @@ const ClubManagement = () => {
                   {/* Available Rooms (No conflicts, not disabled) */}
                   {recommendedRooms.length > 0 && (
                     <div className="mb-4">
-                      <h4 className="text-sm font-semibold text-green-700 mb-2">✅ Available Rooms</h4>
+                      <h4 className="text-sm font-semibold text-green-700 mb-2">Available Rooms</h4>
                       <select
                         value={formData.room_id}
                         onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
-                        required
                         className="w-full px-4 py-2 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 bg-green-50"
                       >
                         <option value="">{t('selectRoom') || 'Select a room...'}</option>
@@ -722,7 +759,7 @@ const ClubManagement = () => {
                   {conflictedRooms.length > 0 && (
                     <div className="mb-4">
                       <h4 className="text-sm font-semibold text-yellow-700 mb-2">
-                        ⚠️ Rooms with Conflicts (Admin can override)
+                        Rooms with Conflicts (Admin can override)
                       </h4>
                       <div className="space-y-2">
                         {conflictedRooms.map(room => {
@@ -737,7 +774,7 @@ const ClubManagement = () => {
                                   <div className="mt-2 space-y-1">
                                     {roomConflicts.map((conflict, idx) => (
                                       <p key={idx} className="text-xs text-yellow-800">
-                                        🔴 {conflict.conflict_type}: {conflict.conflict_title}
+                                        {conflict.conflict_type}: {conflict.conflict_title}
                                         ({conflict.time_range})
                                         {conflict.is_recurring && ' - Weekly'}
                                       </p>
@@ -753,7 +790,7 @@ const ClubManagement = () => {
                                       : 'bg-white border border-yellow-600 text-yellow-600 hover:bg-yellow-50'
                                   }`}
                                 >
-                                  {formData.room_id === room.id.toString() ? 'Selected' : 'Override'}
+                                  {formData.room_id === room.id.toString() ? t('selected') || 'Selected' : t('select_anyway') || 'Yine de Seç'}
                                 </button>
                               </div>
                             </div>
@@ -767,19 +804,48 @@ const ClubManagement = () => {
                   {disabledRooms.length > 0 && (
                     <div className="mb-4">
                       <h4 className="text-sm font-semibold text-red-700 mb-2">
-                        🚫 Disabled Rooms (Not recommended for last-minute events)
+                        {hoursUntilEvent !== null && hoursUntilEvent >= 24
+                          ? 'Disabled Rooms (Too large - please select a more appropriately sized room)'
+                          : 'Disabled Rooms (Not recommended)'}
                       </h4>
                       <div className="space-y-2">
-                        {disabledRooms.map(room => (
-                          <div key={room.id} className="border border-red-300 bg-red-50 rounded-lg p-3 opacity-60">
-                            <p className="font-medium text-gray-900">
-                              {room.name} - Capacity: {room.capacity}
-                            </p>
-                            <p className="text-xs text-red-800 mt-1">
-                              {room.disable_reason}
-                            </p>
-                          </div>
-                        ))}
+                        {disabledRooms.map(room => {
+                          // If event is less than 24 hours away, allow selecting disabled rooms (emergency exception)
+                          const canSelectDisabled = hoursUntilEvent !== null && hoursUntilEvent < 24;
+
+                          return (
+                            <div key={room.id} className={`border border-red-300 bg-red-50 rounded-lg p-3 ${canSelectDisabled ? '' : 'opacity-60'}`}>
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-900">
+                                    {room.name} - Capacity: {room.capacity}
+                                  </p>
+                                  <p className="text-xs text-red-800 mt-1">
+                                    {room.disable_reason}
+                                  </p>
+                                  {canSelectDisabled && (
+                                    <p className="text-xs text-green-700 mt-1 font-medium">
+                                      ⏰ Last-minute exception: Can be selected (event in {Math.round(hoursUntilEvent)} hours)
+                                    </p>
+                                  )}
+                                </div>
+                                {canSelectDisabled && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, room_id: room.id.toString() })}
+                                    className={`ml-4 px-3 py-1 rounded text-sm ${
+                                      formData.room_id === room.id.toString()
+                                        ? 'bg-red-600 text-white'
+                                        : 'bg-white border border-red-600 text-red-600 hover:bg-red-50'
+                                    }`}
+                                  >
+                                    {formData.room_id === room.id.toString() ? t('selected') || 'Selected' : t('select_anyway') || 'Yine de Seç'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

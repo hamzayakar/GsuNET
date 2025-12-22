@@ -475,6 +475,9 @@ const translations = {
     delete: 'Delete',
     save: 'Save',
     adminPanel: 'Admin Panel',
+    selected: 'Selected',
+    select_anyway: 'Select Anyway',
+    future_date_only: 'Past dates cannot be selected',
 
     // Pagination
     previous: 'Previous',
@@ -1027,6 +1030,9 @@ const translations = {
     delete: 'Sil',
     save: 'Kaydet',
     adminPanel: 'Yönetici Paneli',
+    selected: 'Seçildi',
+    select_anyway: 'Yine de Seç',
+    future_date_only: 'Geçmiş tarihler seçilemez',
 
     // Pagination
     previous: 'Önceki',
@@ -1579,6 +1585,9 @@ const translations = {
     delete: 'Supprimer',
     save: 'Sauvegarder',
     adminPanel: "Panneau d'administration",
+    selected: 'Sélectionné',
+    select_anyway: 'Sélectionner quand même',
+    future_date_only: 'Les dates passées ne peuvent pas être sélectionnées',
 
     // Pagination
     previous: 'Précédent',

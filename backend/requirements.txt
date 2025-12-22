@@ -13,4 +13,4 @@ email-validator==2.1.0
 alembic==1.12.1
 redis==5.0.1
 arq==0.26.1
-openai==1.6.1
+openai>=1.12.0

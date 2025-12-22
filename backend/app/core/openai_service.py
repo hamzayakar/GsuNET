@@ -7,12 +7,12 @@ This service uses ChatGPT to intelligently match sponsors with clubs based on:
 - Budget compatibility (50%) - VETO power!
 - Club activity level (10%)
 """
-import os
 import json
 from openai import OpenAI
 from sqlalchemy.orm import Session
 from app.models.club import Club
 from app.models.club_join_request import ClubJoinRequest, JoinRequestStatus
+from app.core.config import settings
 
 
 class OpenAIService:
@@ -20,7 +20,7 @@ class OpenAIService:
 
     def __init__(self):
         """Initialize OpenAI client"""
-        self.api_key = os.getenv("OPENAI_API_KEY")
+        self.api_key = settings.OPENAI_API_KEY
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY not found in environment variables")
         self.client = OpenAI(api_key=self.api_key)

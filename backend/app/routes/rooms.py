@@ -233,11 +233,13 @@ async def recommend_rooms(
                 ))
 
         # Check 24-hour rule
+        # If event is MORE than 24 hours away: disable rooms that are >25% larger than needed (avoid wasting large rooms)
+        # If event is LESS than 24 hours away: allow all rooms (emergency/last-minute exception)
         is_disabled_by_24h_rule = False
         disable_reason = None
-        if min_capacity_for_last_minute and room.capacity < min_capacity_for_last_minute:
+        if hours_until_event >= 24 and max_capacity and room.capacity > max_capacity * 1.25:
             is_disabled_by_24h_rule = True
-            disable_reason = f"Room capacity ({room.capacity}) is less than 25% of max capacity ({int(min_capacity_for_last_minute)}) - Not recommended for events less than 24 hours away"
+            disable_reason = f"Room capacity ({room.capacity}) is more than 25% larger than max capacity ({max_capacity}) - Please select a more appropriately sized room for better resource utilization"
 
         if is_disabled_by_24h_rule:
             # Room is disabled due to 24-hour rule
@@ -271,7 +273,10 @@ async def recommend_rooms(
     elif conflicted_rooms:
         message = f"No conflict-free rooms available. {len(conflicted_rooms)} room(s) with conflicts (may be overridden by admin/advisor)"
     elif disabled_rooms:
-        message = f"No recommended rooms available. {len(disabled_rooms)} room(s) disabled due to 24-hour rule"
+        if hours_until_event >= 24:
+            message = f"No recommended rooms available. {len(disabled_rooms)} room(s) disabled (too large for better resource utilization - select a more appropriately sized room)"
+        else:
+            message = f"No recommended rooms available. {len(disabled_rooms)} room(s) disabled"
     else:
         message = f"No rooms found with capacity >= {capacity}"
 

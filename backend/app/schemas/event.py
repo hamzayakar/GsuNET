@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, timezone
 from app.models.event import EventStatus
 
 if TYPE_CHECKING:
@@ -22,6 +22,20 @@ class EventBase(BaseModel):
     expected_capacity: Optional[int] = None
     max_capacity: Optional[int] = None
     members_only: bool = False
+
+    @field_validator('event_datetime')
+    @classmethod
+    def make_timezone_aware(cls, v):
+        """
+        Ensure datetime is timezone-aware (UTC).
+
+        Frontend sends naive datetime strings which Pydantic parses as naive datetime objects.
+        We need to make them timezone-aware for proper comparison with datetime.now(timezone.utc).
+        """
+        if v.tzinfo is None or v.tzinfo.utcoffset(v) is None:
+            # Naive datetime: assume UTC and make it timezone-aware
+            return v.replace(tzinfo=timezone.utc)
+        return v
 
     @field_validator('duration')
     @classmethod
@@ -59,6 +73,20 @@ class EventUpdate(BaseModel):
     max_capacity: Optional[int] = None
     room_id: Optional[int] = None
     members_only: Optional[bool] = None
+
+    @field_validator('event_datetime')
+    @classmethod
+    def make_timezone_aware(cls, v):
+        """
+        Ensure datetime is timezone-aware (UTC).
+
+        Frontend sends naive datetime strings which Pydantic parses as naive datetime objects.
+        We need to make them timezone-aware for proper comparison with datetime.now(timezone.utc).
+        """
+        if v is not None and (v.tzinfo is None or v.tzinfo.utcoffset(v) is None):
+            # Naive datetime: assume UTC and make it timezone-aware
+            return v.replace(tzinfo=timezone.utc)
+        return v
 
 
 # Schema for event response

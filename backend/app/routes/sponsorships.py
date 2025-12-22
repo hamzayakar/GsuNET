@@ -86,8 +86,9 @@ async def create_sponsorship_application(
         await arq_pool.enqueue_job(
             "send_notification_task",
             admin.id,
-            f"Yeni sponsorluk başvurusu: {new_request.company_name}",
-            "sponsorship_request_created"
+            "Yeni Sponsorluk Başvurusu",  # title
+            f"Yeni sponsorluk başvurusu: {new_request.company_name}",  # message
+            "SPONSORSHIP_UPDATE"  # notification_type (enum key)
         )
 
     return new_request
@@ -242,8 +243,9 @@ async def review_sponsorship_request(
                         await arq_pool.enqueue_job(
                             "send_notification_task",
                             club.manager_id,
-                            f"🎉 Sponsorluk eşleşmesi: {sponsorship_req.company_name} kulübünüzle eşleşti!",
-                            "sponsorship_match_created"
+                            "Sponsorluk Eşleşmesi",  # title
+                            f"🎉 Sponsorluk eşleşmesi: {sponsorship_req.company_name} kulübünüzle eşleşti!",  # message
+                            "SPONSORSHIP_UPDATE"  # notification_type
                         )
 
                     # Notify club advisor
@@ -251,8 +253,9 @@ async def review_sponsorship_request(
                         await arq_pool.enqueue_job(
                             "send_notification_task",
                             club.advisor_id,
-                            f"📊 {club.name} için sponsorluk eşleşmesi: {sponsorship_req.company_name}",
-                            "sponsorship_match_created"
+                            "Sponsorluk Eşleşmesi",  # title
+                            f"📊 {club.name} için sponsorluk eşleşmesi: {sponsorship_req.company_name}",  # message
+                            "SPONSORSHIP_UPDATE"  # notification_type
                         )
 
         except Exception as e:
@@ -263,15 +266,18 @@ async def review_sponsorship_request(
     # Notify sponsor about the decision
     arq_pool = await get_arq_pool()
     if review_data.status == SponsorshipStatus.APPROVED:
+        notification_title = "Başvuru Onaylandı"
         notification_message = "✅ Sponsorluk başvurunuz onaylandı! Kulüp eşleşmeleri oluşturuldu."
     else:
+        notification_title = "Başvuru Reddedildi"
         notification_message = f"❌ Sponsorluk başvurunuz reddedildi. Sebep: {review_data.rejection_reason or 'Belirtilmemiş'}"
 
     await arq_pool.enqueue_job(
         "send_notification_task",
         sponsorship_req.sponsor_id,
-        notification_message,
-        "sponsorship_request_reviewed"
+        notification_title,  # title
+        notification_message,  # message
+        "SPONSORSHIP_UPDATE"  # notification_type
     )
 
     db.refresh(sponsorship_req)
