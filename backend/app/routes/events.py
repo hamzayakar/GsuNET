@@ -1,0 +1,531 @@
+"""
+Event management routes with approval workflow
+"""
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session, joinedload
+from typing import List, Optional
+from datetime import datetime, timezone, timedelta
+
+from app.core.database import get_db
+from app.core.dependencies import get_current_active_user, require_role
+from app.models import Event, User, UserRole, EventStatus, Notification, NotificationType, EventRegistration, RoomSchedule, BlockType
+from app.schemas import EventCreate, EventUpdate, EventResponse, EventApproval
+
+router = APIRouter(prefix="/events", tags=["Events"])
+
+
+def auto_complete_past_events(db: Session):
+    """
+    Automatically mark approved events as completed if their end_time has passed
+
+    Args:
+        db: Database session
+    """
+    now = datetime.now(timezone.utc)
+
+    # Find all approved events where end_time has passed (event has finished)
+    past_events = db.query(Event).filter(
+        Event.status == EventStatus.APPROVED,
+        Event.end_time < now
+    ).all()
+
+    # Mark them as completed
+    for event in past_events:
+        event.status = EventStatus.COMPLETED
+
+    if past_events:
+        db.commit()
+
+    return len(past_events)
+
+
+def send_event_reminders(db: Session):
+    """
+    Send reminder notifications to users for events happening in ~3 days
+
+    Finds events happening between 2.5 and 3.5 days from now and sends
+    reminder notifications to all registered users who haven't received
+    one yet.
+
+    Args:
+        db: Database session
+    """
+    now = datetime.now(timezone.utc)
+    reminder_start = now + timedelta(days=2, hours=12)  # 2.5 days
+    reminder_end = now + timedelta(days=3, hours=12)    # 3.5 days
+
+    # Find approved events happening in the reminder window
+    upcoming_events = db.query(Event).filter(
+        Event.status == EventStatus.APPROVED,
+        Event.event_datetime >= reminder_start,
+        Event.event_datetime <= reminder_end
+    ).all()
+
+    notifications_created = 0
+
+    for event in upcoming_events:
+        # Get all registered users for this event
+        registrations = db.query(EventRegistration).filter(
+            EventRegistration.event_id == event.id
+        ).all()
+
+        for registration in registrations:
+            # Check if user already has a reminder notification for this event
+            existing_reminder = db.query(Notification).filter(
+                Notification.user_id == registration.user_id,
+                Notification.notification_type == NotificationType.EVENT_REMINDER,
+                Notification.message.contains(f"event/{event.id}")  # Check if notification is for this event
+            ).first()
+
+            if not existing_reminder:
+                # Create reminder notification
+                notification = Notification(
+                    title=f"Reminder: {event.title}",
+                    message=f"Your registered event '{event.title}' is happening in 3 days on {event.event_datetime.strftime('%B %d, %Y')}. Don't forget to attend!",
+                    notification_type=NotificationType.EVENT_REMINDER,
+                    user_id=registration.user_id,
+                    event_id=event.id,
+                    read=False
+                )
+                db.add(notification)
+                notifications_created += 1
+
+    if notifications_created > 0:
+        db.commit()
+
+    return notifications_created
+
+
+@router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
+async def create_event(
+    event_data: EventCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Create a new event (status: pending by default)
+
+    Args:
+        event_data: Event creation data
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        Created event object
+
+    Raises:
+        HTTPException: If club manager tries to create event for a club they don't manage
+    """
+    # Authorization check: club managers can only create events for their clubs
+    if current_user.role == UserRole.CLUB_MANAGER:
+        user_manages_club = any(club.id == event_data.club_id for club in current_user.managed_clubs)
+        if not user_manages_club:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only create events for clubs you manage"
+            )
+
+    # Create new event with pending status
+    event_dict = event_data.dict()
+
+    # Validate event datetime is in the future
+    if event_dict['event_datetime'] < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Event date and time must be in the future"
+        )
+
+    # Calculate end_time from event_datetime + duration
+    end_time = event_dict['event_datetime'] + timedelta(minutes=event_dict['duration'])
+
+    new_event = Event(
+        **event_dict,
+        end_time=end_time,
+        status=EventStatus.PENDING
+    )
+
+    db.add(new_event)
+    db.commit()
+    db.refresh(new_event)
+
+    return new_event
+
+
+@router.get("/", response_model=List[EventResponse])
+async def list_events(
+    status: Optional[EventStatus] = None,
+    club_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """
+    List events with optional filtering
+
+    Automatically marks past approved events as completed before returning results.
+
+    Args:
+        status: Filter by event status
+        club_id: Filter by club ID
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+        db: Database session
+
+    Returns:
+        List of events
+    """
+    # Auto-complete past events before fetching
+    auto_complete_past_events(db)
+
+    # NOTE: Event reminders are now sent via background worker
+    # See app/worker.py for scheduled task configuration
+    # send_event_reminders(db)  # Removed - now async via ARQ worker
+
+    query = db.query(Event).options(joinedload(Event.club))
+
+    if status:
+        query = query.filter(Event.status == status)
+
+    if club_id:
+        query = query.filter(Event.club_id == club_id)
+
+    # Sort by event datetime (upcoming events first)
+    query = query.order_by(Event.event_datetime.asc())
+
+    events = query.offset(skip).limit(limit).all()
+    return events
+
+
+@router.get("/{event_id}", response_model=EventResponse)
+async def get_event(
+    event_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get event by ID
+
+    Automatically marks past approved events as completed before returning.
+
+    Args:
+        event_id: Event ID
+        db: Database session
+
+    Returns:
+        Event object
+
+    Raises:
+        HTTPException: If event not found
+    """
+    # Auto-complete past events before fetching
+    auto_complete_past_events(db)
+
+    event = db.query(Event).options(joinedload(Event.club)).filter(Event.id == event_id).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+
+    return event
+
+
+@router.put("/{event_id}", response_model=EventResponse)
+async def update_event(
+    event_id: int,
+    event_data: EventUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Update an event
+
+    Args:
+        event_id: Event ID
+        event_data: Event update data
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        Updated event object
+
+    Raises:
+        HTTPException: If event not found or unauthorized
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+
+    # Authorization check: only the club manager who manages this event's club or admin can update
+    if current_user.role != UserRole.ADMIN:
+        # Check if the user manages the club that owns this event
+        user_manages_club = any(club.id == event.club_id for club in current_user.managed_clubs)
+        if not user_manages_club:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to update this event"
+            )
+
+    # Update event fields
+    update_data = event_data.dict(exclude_unset=True)
+
+    # Track if critical fields (date/time/room) are being updated
+    is_critical_update = any(k in update_data for k in ['event_datetime', 'duration', 'room_id'])
+
+    # If event_datetime or duration is being updated, recalculate end_time
+    if 'event_datetime' in update_data or 'duration' in update_data:
+        new_event_datetime = update_data.get('event_datetime', event.event_datetime)
+        new_duration = update_data.get('duration', event.duration)
+        update_data['end_time'] = new_event_datetime + timedelta(minutes=new_duration)
+
+    # LIFECYCLE HOOK: If approved event's critical fields are updated, reset to PENDING
+    if event.status == EventStatus.APPROVED and is_critical_update:
+        # Remove from schedule (will be re-added on re-approval)
+        db.query(RoomSchedule).filter(
+            RoomSchedule.event_id == event.id
+        ).delete()
+
+        # Reset status to pending (requires re-approval)
+        update_data['status'] = EventStatus.PENDING
+        update_data['approved_by_id'] = None
+        update_data['rejection_reason'] = None
+
+    for field, value in update_data.items():
+        setattr(event, field, value)
+
+    db.commit()
+    db.refresh(event)
+
+    return event
+
+
+@router.put("/{event_id}/approve", response_model=EventResponse)
+async def approve_event(
+    event_id: int,
+    approval_data: EventApproval,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADVISOR, UserRole.ADMIN]))
+):
+    """
+    Approve or reject an event (advisor/admin only)
+
+    Args:
+        event_id: Event ID
+        approval_data: Approval status
+        db: Database session
+        current_user: Current authenticated user (must be advisor or admin)
+
+    Returns:
+        Updated event object
+
+    Raises:
+        HTTPException: If event not found
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+
+    # Store previous status for lifecycle hooks
+    previous_status = event.status
+
+    # Update event status and approver
+    event.status = approval_data.status
+    event.approved_by_id = current_user.id
+
+    # Add rejection reason if provided
+    if approval_data.rejection_reason:
+        event.rejection_reason = approval_data.rejection_reason
+
+    # LIFECYCLE HOOK: Add to room schedule when approved
+    if approval_data.status == EventStatus.APPROVED and event.room_id:
+        # Check if schedule block already exists (shouldn't happen but defensive)
+        existing_block = db.query(RoomSchedule).filter(
+            RoomSchedule.event_id == event.id
+        ).first()
+
+        if not existing_block:
+            # Convert UTC to Istanbul time (UTC+3) for schedule display
+            ISTANBUL_OFFSET = timedelta(hours=3)
+            event_time_istanbul = event.event_datetime + ISTANBUL_OFFSET
+            end_time_istanbul = event.end_time + ISTANBUL_OFFSET
+
+            # Only create schedule if event doesn't cross midnight
+            # (TIME field can't handle next-day times)
+            if end_time_istanbul.date() == event_time_istanbul.date():
+                # Create room schedule block for approved event
+                schedule_block = RoomSchedule(
+                    room_id=event.room_id,
+                    title=event.title,
+                    description=event.description,
+                    block_type=BlockType.EVENT,
+                    start_time=event_time_istanbul.time(),
+                    end_time=end_time_istanbul.time(),
+                    is_recurring=False,
+                    specific_date=event.event_datetime.date(),  # Keep UTC date for matching
+                    event_id=event.id,
+                    created_by=current_user.id
+                )
+                db.add(schedule_block)
+
+    # LIFECYCLE HOOK: Remove from room schedule when rejected
+    elif approval_data.status == EventStatus.REJECTED:
+        # Remove schedule block if it exists (cleanup)
+        db.query(RoomSchedule).filter(
+            RoomSchedule.event_id == event.id
+        ).delete()
+
+    db.commit()
+    db.refresh(event)
+
+    # Send notification to event creator (club manager)
+    if approval_data.status == EventStatus.APPROVED:
+        notification = Notification(
+            user_id=event.club.manager_id,
+            event_id=event.id,
+            title="Event Approved",
+            message=f"Your event '{event.title}' has been approved and is now open for registration!",
+            notification_type=NotificationType.EVENT_APPROVED,
+            read=False
+        )
+        db.add(notification)
+    elif approval_data.status == EventStatus.REJECTED:
+        rejection_msg = f"Your event '{event.title}' has been rejected."
+        if event.rejection_reason:
+            rejection_msg += f" Reason: {event.rejection_reason}"
+
+        notification = Notification(
+            user_id=event.club.manager_id,
+            event_id=event.id,
+            title="Event Rejected",
+            message=rejection_msg,
+            notification_type=NotificationType.EVENT_REJECTED,
+            read=False
+        )
+        db.add(notification)
+
+    db.commit()
+
+    return event
+
+
+@router.put("/{event_id}/cancel", response_model=EventResponse)
+async def cancel_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Cancel an approved event
+
+    Admin can cancel any event, manager/advisor can cancel their club's events.
+    Sends notifications to all registered users via background task queue.
+
+    Args:
+        event_id: Event ID
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        Updated event object with cancelled status
+
+    Raises:
+        HTTPException: If event not found or unauthorized
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+
+    # Authorization: admin can cancel any event, manager/advisor only their club's events
+    if current_user.role != UserRole.ADMIN:
+        # Check if user manages the club that owns this event
+        user_manages_club = any(club.id == event.club_id for club in current_user.managed_clubs)
+        # Also check if user is advisor of the club
+        is_advisor = current_user.role == UserRole.ADVISOR and event.club.advisor_id == current_user.id
+
+        if not user_manages_club and not is_advisor:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to cancel this event"
+            )
+
+    # Update event status to cancelled
+    event.status = EventStatus.CANCELLED
+
+    # LIFECYCLE HOOK: Remove from room schedule when cancelled
+    db.query(RoomSchedule).filter(
+        RoomSchedule.event_id == event.id
+    ).delete()
+
+    db.commit()
+    db.refresh(event)
+
+    # 🚀 Queue background task to send notifications to all registered users
+    # This happens asynchronously and doesn't block the HTTP response
+    try:
+        from app.core.redis import get_redis_pool
+
+        redis = await get_redis_pool()
+        await redis.enqueue_job(
+            'send_event_cancellation_notifications',
+            event_id=event.id,
+            event_title=event.title,
+            event_datetime=event.event_datetime.isoformat()
+        )
+    except Exception as e:
+        # Log error but don't fail the request - notifications are best-effort
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Failed to queue cancellation notifications for event {event_id}: {e}")
+
+    return event
+
+
+@router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.CLUB_MANAGER, UserRole.ADMIN]))
+):
+    """
+    Delete an event (club manager or admin only)
+
+    Args:
+        event_id: Event ID
+        db: Database session
+        current_user: Current authenticated user
+
+    Raises:
+        HTTPException: If event not found or unauthorized
+    """
+    event = db.query(Event).filter(Event.id == event_id).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+
+    # Authorization check: only the club manager who manages this event's club or admin can delete
+    if current_user.role != UserRole.ADMIN:
+        # Check if the user manages the club that owns this event
+        user_manages_club = any(club.id == event.club_id for club in current_user.managed_clubs)
+        if not user_manages_club:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to delete this event"
+            )
+
+    db.delete(event)
+    db.commit()
